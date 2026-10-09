@@ -3,8 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { DEMO_ACCOUNTS, DEMO_SCHOOL_ID } from '../src/lib/demo-accounts';
 
-const rawUrl = process.env.DATABASE_URL || 'file:./dev.db';
-const adapter = new PrismaLibSql({ url: rawUrl });
+const rawUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL || 'file:./dev.db';
+const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
+const adapter = new PrismaLibSql({ url: rawUrl, ...(authToken ? { authToken } : {}) });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
