@@ -12,7 +12,8 @@ export async function getCurrentUser() {
     const sessionCookie = cookieStore.get('auth_session')?.value
     if (sessionCookie) {
       try {
-        const sessionUser = JSON.parse(sessionCookie)
+        const decoded = sessionCookie.includes('%') ? decodeURIComponent(sessionCookie) : sessionCookie;
+        const sessionUser = JSON.parse(decoded)
         // Verify with database if database is connected
         if (sessionUser?.id) {
           try {
