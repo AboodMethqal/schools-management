@@ -26,11 +26,25 @@ export interface SubmitApplicationInput {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[\d\+\-\s\(\)]{7,20}$/;
 
+import { applyDatabaseMigrations } from "@/lib/migration-runner";
+
+let isDbReady = false;
+async function ensureDb() {
+  if (isDbReady) return;
+  try {
+    await applyDatabaseMigrations();
+    isDbReady = true;
+  } catch (err) {
+    console.warn("ensureDb non-fatal error:", err);
+  }
+}
+
 /**
  * 1. Submit a New School Application (Public)
  */
 export async function submitSchoolApplication(data: SubmitApplicationInput) {
   try {
+    await ensureDb();
     const schoolName = data.schoolName?.trim();
     const adminName = data.adminName?.trim();
     const email = data.email?.trim().toLowerCase();
@@ -155,6 +169,7 @@ export async function getSchoolApplications(filters?: {
   search?: string;
 }) {
   try {
+    await ensureDb();
     const currentUser = await getCurrentUser();
     if (!currentUser || (currentUser.role as string) !== "super_admin") {
       return {
@@ -263,6 +278,7 @@ export async function getSchoolApplicationById(id: string) {
  */
 export async function approveSchoolApplication(id: string, notes?: string) {
   try {
+    await ensureDb();
     const currentUser = await getCurrentUser();
     if (!currentUser || (currentUser.role as string) !== "super_admin") {
       return {
