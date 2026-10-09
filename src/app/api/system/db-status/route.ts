@@ -39,6 +39,21 @@ export async function GET() {
         );
         const tableNames = tables.map(t => t.name);
 
+        let userColumns: any[] = [];
+        let alterResult: string | null = null;
+        if (tableNames.includes('User')) {
+            try {
+                await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "profileImage" TEXT');
+                alterResult = 'altered profileImage successfully';
+            } catch (e: any) {
+                alterResult = e?.message || String(e);
+            }
+            try {
+                await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "password" TEXT');
+            } catch {}
+            userColumns = await prisma.$queryRawUnsafe('PRAGMA table_info("User")');
+        }
+
         let applicationCount = 0;
         if (tableNames.includes('SchoolApplication')) {
             applicationCount = await prisma.schoolApplication.count();
@@ -54,6 +69,10 @@ export async function GET() {
                 hasSchool: tableNames.includes('School'),
                 hasUser: tableNames.includes('User'),
                 names: tableNames,
+            },
+            userTable: {
+                alterResult,
+                columns: userColumns.map((c: any) => c.name),
             },
             data: {
                 applicationCount,
