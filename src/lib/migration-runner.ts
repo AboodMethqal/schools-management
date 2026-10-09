@@ -544,14 +544,20 @@ export const MIGRATION_STATEMENTS = [
     `CREATE INDEX IF NOT EXISTS "SchoolApplication_email_idx" ON "SchoolApplication"("email")`
 ];
 
+import { createClient } from '@libsql/client';
+
 export async function applyDatabaseMigrations() {
     let executedCount = 0;
     const errors: string[] = [];
 
-    // 1. Run DDL statements safely
+    const url = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL || 'file:./dev.db';
+    const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
+    const client = createClient({ url, ...(authToken ? { authToken } : {}) });
+
+    // 1. Run DDL statements directly via libSQL client
     for (const stmt of MIGRATION_STATEMENTS) {
         try {
-            await prisma.$executeRawUnsafe(stmt);
+            await client.execute(stmt);
             executedCount++;
         } catch (err: unknown) {
             const msg = (err as Error).message || String(err);
@@ -563,61 +569,67 @@ export async function applyDatabaseMigrations() {
 
     // Ensure User table has profileImage and password columns
     try {
-        await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "profileImage" TEXT');
+        await client.execute('ALTER TABLE "User" ADD COLUMN "profileImage" TEXT');
     } catch {
         // column may already exist
     }
     try {
-        await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "password" TEXT');
+        await client.execute('ALTER TABLE "User" ADD COLUMN "password" TEXT');
     } catch {
         // column may already exist
     }
 
-    // 2. Fetch created tables
-    const tables = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+    // 2. Fetch created tables directly from libSQL
+    const tablesRes = await client.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_prisma_%' ORDER BY name ASC"
     );
-    const tableNames = tables.map(t => t.name);
+    const tableNames = tablesRes.rows.map(r => String(r.name));
 
     // 3. Seed demo school and users if tables are empty
     let demoSeeded = false;
     try {
-        const schoolCount = await prisma.school.count();
+        const schoolCheck = await client.execute('SELECT COUNT(*) as count FROM "School"');
+        const schoolCount = Number(schoolCheck.rows[0]?.count || 0);
         if (schoolCount === 0) {
-            await prisma.school.create({
-                data: {
-                    id: DEMO_SCHOOL_ID,
-                    schoolName: 'مدرسة مثقال النموذجية الحديثة',
-                    slug: 'methqal-model-school',
-                    schoolEmail: 'contact@methqal.tech',
-                    phone: '+967 1 234 567',
-                    address: 'صنعاء، الجمهورية اليمنية',
-                    plan: 'pro',
-                    duration: '12',
-                    schoolCategory: 'combined',
-                    expectedStudents: 450,
-                    registrationId: 'MTH-SCH-2026-001',
-                    language: 'arabic',
-                },
+            await client.execute({
+                sql: `INSERT INTO "School" (id, schoolName, slug, schoolEmail, phone, address, plan, duration, schoolCategory, expectedStudents, registrationId, language, createdAt, updatedAt)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                args: [
+                    DEMO_SCHOOL_ID,
+                    'مدرسة مثقال النموذجية الحديثة',
+                    'methqal-model-school',
+                    'contact@methqal.tech',
+                    '+967 1 234 567',
+                    'صنعاء، الجمهورية اليمنية',
+                    'pro',
+                    '12',
+                    'combined',
+                    450,
+                    'MTH-SCH-2026-001',
+                    'arabic'
+                ]
             });
         }
 
-        const userCount = await prisma.user.count();
+        const userCheck = await client.execute('SELECT COUNT(*) as count FROM "User"');
+        const userCount = Number(userCheck.rows[0]?.count || 0);
         if (userCount === 0) {
             const defaultPasswordHash = await bcrypt.hash('Password123!', 10);
 
             for (const acc of Object.values(DEMO_ACCOUNTS)) {
-                await prisma.user.create({
-                    data: {
-                        id: acc.id,
-                        authUserId: acc.authUserId,
-                        email: acc.email,
-                        name: acc.name,
-                        role: acc.role,
-                        schoolId: acc.schoolId || null,
-                        status: 'active',
-                        password: defaultPasswordHash,
-                    },
+                await client.execute({
+                    sql: `INSERT INTO "User" (id, authUserId, email, name, role, schoolId, status, password, createdAt, updatedAt)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                    args: [
+                        acc.id,
+                        acc.authUserId,
+                        acc.email,
+                        acc.name,
+                        acc.role,
+                        acc.schoolId || null,
+                        'active',
+                        defaultPasswordHash
+                    ]
                 });
             }
             demoSeeded = true;
