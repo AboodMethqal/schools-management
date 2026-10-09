@@ -1,0 +1,535 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* --- LIGHT MODE (ডিফল্ট) --- */
+  --color-bg-page: #F8FAFC;
+  --color-bg-card: #FFFFFF;
+  --color-border-light: #E2E8F0;
+
+  /* লাইট থিমের জন্য প্রফেশনাল টেক্সট কালার */
+  --color-text-primary: #0F172A;
+  /* Slate 900 - টাইটেলের জন্য */
+  --color-text-secondary: #334155;
+  /* Slate 700 - বডি টেক্সটের জন্য */
+  --color-text-muted: #475569;
+  /* Slate 600 - সাব-টেক্সটের জন্য (পড়ার সুবিধা বাড়াবে) */
+
+  --color-primary: #2563EB;
+
+  --sidebar: hsl(0 0% 98%);
+
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+
+  --sidebar-primary: hsl(240 5.9% 10%);
+
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+
+  --sidebar-border: hsl(220 13% 91%);
+
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  /* --- DARK MODE (Enhanced Palette) --- */
+  --color-bg-page: #030712;
+  /* Very Deep Navy-Black (Slate 950) */
+  --color-bg-card: #0F172A;
+  /* Dark Card background (Slate 900) */
+  --color-border-light: #1E293B;
+  /* Border for cards (Slate 800) */
+
+  /* ডার্ক থিমের জন্য রিডেবল টেক্সট */
+  --color-text-primary: #FFFFFF;
+  /* Pure white for headers */
+  --color-text-secondary: #E2E8F0;
+  /* Lightest gray for body (Slate 200) */
+  --color-text-muted: #94A3B8;
+  /* Muted text (Slate 400) */
+
+  --sidebar: #020617;
+  /* Even darker for sidebar */
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #3B82F6;
+  /* Brighter blue for primary */
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #F8FAFC;
+  --sidebar-border: #1E293B;
+  --sidebar-ring: #3B82F6;
+}
+
+@theme {
+  /* Core Colors */
+  --color-bg-page: var(--color-bg-page);
+  --color-bg-card: var(--color-bg-card);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-border-light: var(--color-border-light);
+  --color-primary: var(--color-primary);
+
+  /* Sidebar Colors */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+body {
+  background-color: var(--color-bg-page);
+  color: var(--color-text-secondary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-text-primary);
+  @apply font-bold;
+}
+
+/* --- Custom Animations --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 40px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -40px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+  }
+
+  50% {
+    opacity: .8;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.8s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+/* Particle Animation for Hero BG */
+@keyframes particle-drift {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-110vh);
+    opacity: 0;
+  }
+}
+
+.animate-particle-drift {
+  animation-name: particle-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* --- Scrollbar Customization --- */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+  }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+
+
+/* animetion of all school */
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 25s linear infinite;
+}
+/* Methqal Tech bilingual layout helpers */
+html[data-language="ar"] body {
+  font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+html[dir="rtl"] .dashboard-sidebar-fixed {
+  left: auto;
+  right: 0;
+  border-right: 0;
+  border-left: 1px solid rgba(255,255,255,.05);
+}
+
+html[dir="rtl"] .dashboard-main {
+  padding-left: 0;
+  padding-right: 16rem;
+}
+
+html[dir="ltr"] .dashboard-main {
+  padding-left: 16rem;
+  padding-right: 0;
+}
+
+html[dir="rtl"] .dashboard-sidebar-fixed .absolute.left-0 {
+  left: auto;
+  right: 0;
+  border-radius: 0 .375rem .375rem 0;
+}
+
+html[dir="rtl"] .dashboard-sidebar-fixed .-left-10 {
+  left: auto;
+  right: -2.5rem;
+}
+
+@media (max-width: 767px) {
+  html[dir="rtl"] .dashboard-main,
+  html[dir="ltr"] .dashboard-main {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+html[dir="rtl"] .dashboard-mobile-sidebar { left: auto; right: 0; }
+
+/* =========================================================
+   Methqal Tech — Arabic / RTL production layer
+   ========================================================= */
+html[dir="rtl"] {
+  font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+html[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+  text-align: right;
+}
+
+html[dir="rtl"] [class~="text-left"] { text-align: right !important; }
+html[dir="rtl"] [class~="text-right"] { text-align: left !important; }
+
+/* Common directional utilities used throughout the imported screens. */
+html[dir="rtl"] [class~="left-0"] { left: auto !important; right: 0 !important; }
+html[dir="rtl"] [class~="left-1"] { left: auto !important; right: 0.25rem !important; }
+html[dir="rtl"] [class~="left-2"] { left: auto !important; right: 0.5rem !important; }
+html[dir="rtl"] [class~="left-3"] { left: auto !important; right: 0.75rem !important; }
+html[dir="rtl"] [class~="left-3\.5"] { left: auto !important; right: 0.875rem !important; }
+html[dir="rtl"] [class~="left-4"] { left: auto !important; right: 1rem !important; }
+html[dir="rtl"] [class~="left-5"] { left: auto !important; right: 1.25rem !important; }
+html[dir="rtl"] [class~="left-6"] { left: auto !important; right: 1.5rem !important; }
+html[dir="rtl"] [class~="left-10"] { left: auto !important; right: 2.5rem !important; }
+html[dir="rtl"] [class~="left-12"] { left: auto !important; right: 3rem !important; }
+html[dir="rtl"] [class~="right-0"] { right: auto !important; left: 0 !important; }
+html[dir="rtl"] [class~="right-1"] { right: auto !important; left: 0.25rem !important; }
+html[dir="rtl"] [class~="right-2"] { right: auto !important; left: 0.5rem !important; }
+html[dir="rtl"] [class~="right-3"] { right: auto !important; left: 0.75rem !important; }
+html[dir="rtl"] [class~="right-4"] { right: auto !important; left: 1rem !important; }
+html[dir="rtl"] [class~="right-5"] { right: auto !important; left: 1.25rem !important; }
+html[dir="rtl"] [class~="right-6"] { right: auto !important; left: 1.5rem !important; }
+html[dir="rtl"] [class~="right-10"] { right: auto !important; left: 2.5rem !important; }
+html[dir="rtl"] [class~="right-12"] { right: auto !important; left: 3rem !important; }
+
+html[dir="rtl"] [class~="ml-1"] { margin-left: 0 !important; margin-right: 0.25rem !important; }
+html[dir="rtl"] [class~="ml-2"] { margin-left: 0 !important; margin-right: 0.5rem !important; }
+html[dir="rtl"] [class~="ml-3"] { margin-left: 0 !important; margin-right: 0.75rem !important; }
+html[dir="rtl"] [class~="ml-4"] { margin-left: 0 !important; margin-right: 1rem !important; }
+html[dir="rtl"] [class~="mr-1"] { margin-right: 0 !important; margin-left: 0.25rem !important; }
+html[dir="rtl"] [class~="mr-2"] { margin-right: 0 !important; margin-left: 0.5rem !important; }
+html[dir="rtl"] [class~="mr-3"] { margin-right: 0 !important; margin-left: 0.75rem !important; }
+html[dir="rtl"] [class~="mr-4"] { margin-right: 0 !important; margin-left: 1rem !important; }
+html[dir="rtl"] [class~="pl-4"] { padding-left: 0 !important; padding-right: 1rem !important; }
+html[dir="rtl"] [class~="pl-5"] { padding-left: 0 !important; padding-right: 1.25rem !important; }
+html[dir="rtl"] [class~="pl-6"] { padding-left: 0 !important; padding-right: 1.5rem !important; }
+html[dir="rtl"] [class~="pr-4"] { padding-right: 0 !important; padding-left: 1rem !important; }
+html[dir="rtl"] [class~="pr-5"] { padding-right: 0 !important; padding-left: 1.25rem !important; }
+html[dir="rtl"] [class~="pr-6"] { padding-right: 0 !important; padding-left: 1.5rem !important; }
+
+html[dir="rtl"] .dashboard-sidebar-fixed {
+  left: auto !important;
+  right: 0 !important;
+  border-right: 0 !important;
+  border-left: 1px solid rgba(255,255,255,.05) !important;
+}
+
+html[dir="rtl"] .dashboard-main {
+  padding-left: 0 !important;
+  padding-right: 16rem !important;
+}
+
+html[dir="ltr"] .dashboard-main {
+  padding-left: 16rem !important;
+  padding-right: 0 !important;
+}
+
+html[dir="rtl"] table { direction: rtl; }
+html[dir="rtl"] .recharts-wrapper { direction: ltr; }
+html[dir="rtl"] [role="dialog"] { direction: rtl; }
+
+/* Prevent Latin identifiers, emails and transaction IDs from being mirrored. */
+html[dir="rtl"] .font-mono,
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="url"],
+html[dir="rtl"] input[type="number"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Methqal Tech — Phase 3 visual system
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --methqal-blue: #1677ff;
+  --methqal-cyan: #20c4e8;
+  --methqal-radius: 20px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Inter, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+html[lang="ar"] body {
+  font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+.methqal-dashboard {
+  --surface: var(--color-bg-card);
+  --surface-soft: color-mix(in srgb, var(--color-bg-card) 86%, var(--color-primary));
+}
+
+.methqal-dashboard :where(button, a, input, select, textarea) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.methqal-dashboard :where(input, select, textarea) {
+  border-radius: 14px;
+  border-color: var(--color-border-light);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
+.methqal-dashboard :where(input, select, textarea):focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--methqal-blue) 55%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--methqal-blue) 10%, transparent);
+}
+
+.methqal-dashboard :where(table) {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.methqal-dashboard :where(th) {
+  background: color-mix(in srgb, var(--color-bg-page) 88%, var(--methqal-blue));
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.methqal-dashboard :where(td, th) {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.methqal-dashboard :where(tr:last-child td) {
+  border-bottom: 0;
+}
+
+.methqal-dashboard .rounded-lg,
+.methqal-dashboard .rounded-xl,
+.methqal-dashboard .rounded-2xl {
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.methqal-dashboard .shadow-sm {
+  box-shadow: 0 4px 18px rgba(15, 23, 42, .045);
+}
+
+.dark .methqal-dashboard .shadow-sm {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+}
+
+[dir="rtl"] .methqal-dashboard {
+  text-align: right;
+}
+
+[dir="ltr"] .methqal-dashboard {
+  text-align: left;
+}
+
+@media (max-width: 767px) {
+  .methqal-dashboard main {
+    padding-bottom: 5rem;
+  }
+}
+
+
+/* Methqal Tech design system: Arabic-first typography and direction-safe controls. */
+html {
+  font-family: Inter, "Tajawal", "Noto Sans Arabic", "Segoe UI", Arial, sans-serif;
+}
+
+html[dir="rtl"] body {
+  font-family: "Tajawal", "Noto Sans Arabic", Inter, "Segoe UI", Arial, sans-serif;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select,
+html[dir="rtl"] button {
+  font-family: inherit;
+}
+
+/* Keep numbers, IDs and technical strings readable in Arabic layouts. */
+html[dir="rtl"] .font-mono,
+html[dir="rtl"] [data-ltr] {
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+/* Prevent horizontal overflow on dense dashboards and tables. */
+.methqal-dashboard {
+  overflow-x: clip;
+}
+
+.methqal-dashboard table {
+  min-width: 100%;
+}
+
+.methqal-dashboard th,
+.methqal-dashboard td {
+  vertical-align: middle;
+}
+
+/* Consistent focus state across every role and form. */
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.methqal-dashboard input,
+.methqal-dashboard textarea,
+.methqal-dashboard select {
+  border-radius: 0.875rem;
+}
+
+.methqal-dashboard input::placeholder,
+.methqal-dashboard textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.methqal-dashboard .overflow-x-auto {
+  scrollbar-width: thin;
+}
+
+@media (max-width: 767px) {
+  .methqal-dashboard main {
+    padding-inline: 1rem;
+  }
+
+  .methqal-dashboard table {
+    font-size: 0.78rem;
+  }
+
+  .methqal-dashboard th,
+  .methqal-dashboard td {
+    white-space: nowrap;
+  }
+}

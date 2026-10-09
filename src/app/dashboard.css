@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* --- কালার ভেরিয়েবলসমূহ --- */
+:root {
+  /* পুরো পেজের পেছনের রঙ (হালকা নীল-সাদা) */
+  --color-bg-page: #F8FAFC;
+  
+  /* কার্ড বা টেবিলের ভেতরের সাদা রঙ */
+  --color-bg-card: #FFFFFF;
+  
+  /* বর্ডার বা হালকা দাগের রঙ (হালকা ধূসর) */
+  --color-border-light: #E2E8F0;
+
+  /* বড় হেডলাইন বা টাইটেলের রঙ (গাঢ় নীল-কালো) */
+  --color-text-primary: #020617;   
+  
+  /* সাধারণ লেখার রঙ (গাঢ় ধূসর) */
+  --color-text-secondary: #334155; 
+  
+  /* তারিখ বা ছোট তথ্যের হালকা রঙ (হালকা ধূসর) */
+  --color-text-muted: #64748B;    
+
+  /* বাটুন বা আইকনের প্রধান নীল রঙ */
+  --color-primary: #2563EB;
+}
+
+/* --- ড্যাশবোর্ড ক্লাস স্টাইল --- */
+
+/* ১. পুরো পেজের মূল লেআউট */
+.dash-layout {
+  background-color: var(--color-bg-page); /* পেজের ব্যাকগ্রাউন্ড */
+  color: var(--color-text-secondary);     /* সাধারণ টেক্সট কালার */
+  min-height: 100vh;
+}
+
+/* ২. বক্স বা কার্ড ডিজাইন */
+.dash-card {
+  background-color: var(--color-bg-card); /* কার্ডের ভেতরের সাদা রঙ */
+  border: 1px solid var(--color-border-light); /* চারপাশে হালকা দাগ */
+  border-radius: 12px;                      /* কোণাগুলো একটু গোল করা */
+  padding: 24px;                            /* ভেতরের খালি জায়গা */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* হালকা ছায়া */
+}
+
+/* ৩. বড় টাইটেলের জন্য */
+.dash-title {
+  color: var(--color-text-primary); /* গাঢ় কালো-নীল রঙ */
+  font-weight: 700;                 /* লেখাটা মোটা হবে */
+}
+
+/* ৪. টেবিলের উপরের হেডার (যেখানে Date, Status লেখা থাকে) */
+.dash-table-header {
+  background-color: #F1F5F9;      /* হালকা ধূসর ব্যাকগ্রাউন্ড */
+  color: var(--color-text-muted); /* লেখার রঙ হালকা হবে */
+  font-size: 11px;                /* লেখার সাইজ ছোট */
+  text-transform: uppercase;      /* সব বড় হাতের অক্ষর */
+}
+
+/* ৫. ব্যাজ (যেমন: Present বা Paid লেখা গোল ঘর) */
+.dash-badge {
+  padding: 4px 10px;
+  border-radius: 9999px; /* পুরোপুরি গোল */
+  font-size: 12px;
+  font-weight: 600;
+}
