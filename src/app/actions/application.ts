@@ -351,8 +351,8 @@ export async function approveSchoolApplication(id: string, notes?: string) {
       // 3. Create initial classes for the school
       await tx.class.createMany({
         data: [
-          { name: "Class 1", schoolId: school.id },
-          { name: "Class 2", schoolId: school.id },
+          { name: "Class 1", numericName: 1, schoolId: school.id },
+          { name: "Class 2", numericName: 2, schoolId: school.id },
         ],
       });
 
