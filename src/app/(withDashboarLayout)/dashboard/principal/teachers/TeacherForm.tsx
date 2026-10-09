@@ -24,6 +24,7 @@ import {
 import { addTeacher, getTeacher, updateTeacher, deleteTeacher } from "@/app/actions/teacher";
 import { useLanguage } from "@/context/LanguageProvider";
 import { useAuth } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 export default function TeacherForm() {
     const { language } = useLanguage();
@@ -153,9 +154,10 @@ export default function TeacherForm() {
         if (!confirm("This will permanently remove the teacher profile. Continue?")) return;
         const result = await deleteTeacher(teacherIdFromUrl!);
         if (result.success) {
+            toast.success(isAr ? 'تم حذف المعلم بنجاح' : 'Teacher removed successfully');
             router.push("/dashboard/principal/teachers");
         } else {
-            alert(result.error);
+            toast.error(result.error || (isAr ? 'فشل الحذف' : 'Failed to delete'));
         }
     };
 

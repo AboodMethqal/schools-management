@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { getSchoolById, updateSchool } from '@/app/actions/school'
 import { useLanguage } from '@/context/LanguageProvider'
+import Swal from 'sweetalert2'
 
 export default function EditSchoolPage() {
     const { language } = useLanguage()
@@ -31,7 +32,7 @@ export default function EditSchoolPage() {
         setFormData(res.data)
         setLoading(false)
       } else {
-        alert("Error loading school data")
+        Swal.fire(isAr ? 'خطأ!' : 'Error!', isAr ? 'تعذر تحميل بيانات المؤسسة' : 'Error loading school data', 'error')
         router.push('/dashboard/super-admin/schools')
       }
     }
@@ -47,9 +48,9 @@ export default function EditSchoolPage() {
     setUpdating(true)
     const res = await updateSchool(id as string, formData)
     if (res.success) {
-      alert("🎉 Institution Updated Successfully!")
+      Swal.fire(isAr ? 'تم التحديث!' : 'Updated!', isAr ? 'تم تحديث بيانات المؤسسة بنجاح' : 'Institution Updated Successfully!', 'success')
     } else {
-      alert("❌ Update Failed: " + res.error)
+      Swal.fire(isAr ? 'فشل التحديث' : 'Update Failed', res.error || (isAr ? 'حدث خطأ أثناء التحديث' : 'Failed to update institution'), 'error')
     }
     setUpdating(false)
   }

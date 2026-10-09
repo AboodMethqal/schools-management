@@ -19,16 +19,19 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/shared/navbar/Navbar";
 import Footer from "@/components/shared/footer/Footer";
-import { useAuth } from '@/hooks/useAuth';
-import { useLanguage } from '@/context/LanguageProvider';
-import { TbLockPassword } from "react-icons/tb";
 import PageLoader from '@/components/shared/PageLoader';
 import toast from 'react-hot-toast';
+import { submitSchoolApplication } from '@/app/actions/application';
+import { useLanguage } from '@/context/LanguageProvider';
+import { TbLockPassword } from 'react-icons/tb';
+
 
 const AdminApplyPage = () => {
     const { t, language } = useLanguage();
+    const isAr = language === 'ar';
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
+    const [submittedRef, setSubmittedRef] = useState<string>('');
     const [formData, setFormData] = useState({
         schoolName: '',
         adminName: '',
@@ -39,7 +42,6 @@ const AdminApplyPage = () => {
         message: ''
     });
 
-    const { signUp } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -52,19 +54,27 @@ const AdminApplyPage = () => {
       try {
         setLoading(true);
 
-        const { data, error } = await signUp(
-          formData.email,
-          formData.password,
-          "admin" // role
-        );
+        const result = await submitSchoolApplication({
+          schoolName: formData.schoolName,
+          adminName: formData.adminName,
+          email: formData.email,
+          phone: formData.phone,
+          instituteCode: formData.instituteCode,
+          password: formData.password,
+          message: formData.message,
+        });
 
-        if (error) throw error;
+        if (!result.success) {
+          toast.error(result.error || (isAr ? 'فشل إرسال الطلب' : 'Failed to submit application'));
+          return;
+        }
 
+        setSubmittedRef(result.applicationNo || '');
         setStep(3);
-        toast.success(language === 'ar' ? 'تم تقديم الطلب بنجاح!' : 'Application submitted successfully!');
+        toast.success(isAr ? 'تم تقديم الطلب بنجاح وهو قيد المراجعة!' : 'Application submitted successfully and is awaiting review!');
 
       } catch (err: any) {
-        toast.error(err.message || (language === 'ar' ? 'فشل إرسال الطلب' : 'Failed to submit application'));
+        toast.error(err.message || (isAr ? 'فشل إرسال الطلب' : 'Failed to submit application'));
       } finally {
         setLoading(false);
       }
@@ -197,31 +207,65 @@ const AdminApplyPage = () => {
                                             </div>
                                         </div>
 
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-text-primary ms-1">
+                                                    {language === 'ar' ? 'رمز أو رقم الترخيص (اختياري)' : 'Institute / License Code (Optional)'}
+                                                </label>
+                                                <div className="relative group">
+                                                    <div className="absolute start-5 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-emerald-500 transition-colors">
+                                                        <FileText size={16} />
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        name="instituteCode"
+                                                        value={formData.instituteCode}
+                                                        onChange={handleChange}
+                                                        placeholder={language === 'ar' ? "SCH-2026-XYZ" : "e.g. SCH-2026-XYZ"}
+                                                        className="w-full h-12 ps-12 pe-6 rounded-2xl bg-bg-page border border-border-light focus:bg-bg-card focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-text-primary ms-1">
+                                                    {t('password') || (language === 'ar' ? 'كلمة المرور' : 'Password')}
+                                                </label>
+                                                <div className="relative group">
+                                                    <div className="absolute start-5 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-emerald-500 transition-colors">
+                                                        <TbLockPassword size={16} />
+                                                    </div>
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        name="password"
+                                                        value={formData.password}
+                                                        onChange={handleChange}
+                                                        placeholder="••••••••"
+                                                        className="w-full h-12 ps-12 pe-12 rounded-2xl bg-bg-page border border-border-light focus:bg-bg-card focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-sm"
+                                                        required
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute end-5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                                                    >
+                                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-text-primary ms-1">
-                                                {t('password') || (language === 'ar' ? 'كلمة المرور' : 'Password')}
+                                                {language === 'ar' ? 'رسالة أو ملاحظات إضافية (اختياري)' : 'Additional Notes / Message (Optional)'}
                                             </label>
-                                            <div className="relative group">
-                                                <div className="absolute start-5 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-emerald-500 transition-colors">
-                                                    <TbLockPassword size={16} />
-                                                </div>
-                                                <input
-                                                    type={showPassword ? "text" : "password"}
-                                                    name="password"
-                                                    value={formData.password}
-                                                    onChange={handleChange}
-                                                    placeholder="••••••••"
-                                                    className="w-full h-12 ps-12 pe-12 rounded-2xl bg-bg-page border border-border-light focus:bg-bg-card focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-sm"
-                                                    required
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute end-5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
-                                                >
-                                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                </button>
-                                            </div>
+                                            <textarea
+                                                name="message"
+                                                rows={3}
+                                                value={formData.message}
+                                                onChange={handleChange}
+                                                placeholder={language === 'ar' ? "أية معلومات إضافية عن أعداد الطلاب أو البرامج المطلوبة..." : "Any additional information regarding your school size or requirements..."}
+                                                className="w-full p-4 rounded-2xl bg-bg-page border border-border-light focus:bg-bg-card focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-sm resize-none"
+                                            />
                                         </div>
 
                                         <button
@@ -247,21 +291,41 @@ const AdminApplyPage = () => {
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="bg-bg-card/80 backdrop-blur-3xl rounded-[2.5rem] border border-border-light shadow-2xl p-12 text-center"
                             >
-                                <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 mx-auto mb-8">
+                                <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 mx-auto mb-6">
                                     <ShieldCheck size={40} />
                                 </div>
-                                <h1 className="text-3xl font-black tracking-tight mb-4">
-                                    {language === 'ar' ? 'تم استلام طلبك بنجاح' : 'Application Submitted'}
+                                <h1 className="text-3xl font-black tracking-tight mb-3">
+                                    {language === 'ar' ? 'تم استلام طلبك بنجاح' : 'Application Received'}
                                 </h1>
-                                <p className="text-text-muted font-bold text-sm max-w-sm mx-auto mb-10 leading-relaxed">
-                                    {language === 'ar' ? 'شكراً لاهتمامك بالانضمام إلى مثقال تك. سيقوم فريق الإدارة المركزية بمراجعة طلبك والتواصل معك عبر البريد الإلكتروني خلال 24-48 ساعة.' : 'Thank you for your interest. Our super admin team will review your application and contact you via email within 24-48 hours.'}
+                                
+                                {submittedRef && (
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 font-mono font-black text-sm tracking-wider mb-6">
+                                        <span>{language === 'ar' ? 'رقم المرجع:' : 'Reference No:'}</span>
+                                        <span>{submittedRef}</span>
+                                    </div>
+                                )}
+
+                                <p className="text-text-muted font-bold text-sm max-w-md mx-auto mb-8 leading-relaxed">
+                                    {language === 'ar' 
+                                        ? 'تم حفظ طلب تسجيل مؤسستك في قاعدة البيانات المركزية بنجاح وهو الآن قيد مراجعة المشرف العام (Super Admin). يرجى الاحتفاظ برقم المرجع أعلاه لمتابعة حالة الطلب.'
+                                        : 'Your school application has been saved to the database and is currently awaiting review by the Super Admin team. Please retain your reference number above for status tracking.'}
                                 </p>
-                                <Link
-                                    href="/"
-                                    className="inline-flex items-center gap-2 px-8 h-14 rounded-2xl bg-bg-page border border-border-light font-black uppercase tracking-widest hover:border-primary/20 hover:text-primary transition-all shadow-sm"
-                                >
-                                    {language === 'ar' ? 'العودة للرئيسية' : 'Return Home'}
-                                </Link>
+                                
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                    <Link
+                                        href="/login"
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-600/20 transition-all"
+                                    >
+                                        <ArrowLeft size={16} />
+                                        {language === 'ar' ? 'العودة لصفحة تسجيل الدخول' : 'Return to Login'}
+                                    </Link>
+                                    <Link
+                                        href="/"
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 h-12 rounded-2xl bg-bg-page border border-border-light font-black uppercase text-xs tracking-widest hover:border-primary/20 hover:text-primary transition-all shadow-sm"
+                                    >
+                                        {language === 'ar' ? 'العودة للرئيسية' : 'Return Home'}
+                                    </Link>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>

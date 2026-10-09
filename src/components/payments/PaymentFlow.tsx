@@ -22,6 +22,7 @@ import {
 
 import { getPaymentByTransactionId } from "@/app/(withDashboarLayout)/dashboard/student/payments/actions"
 import { useLanguage } from "@/context/LanguageProvider"
+import toast from "react-hot-toast"
 
 export default function PaymentFlow({ 
     initialStatus, 
@@ -78,7 +79,7 @@ export default function PaymentFlow({
         const finalAmount = paymentMode === 'custom' ? parseFloat(customAmount) : (selectedFee?.amount || 0)
         
         if (!finalAmount || finalAmount <= 0) {
-            alert(language === 'ar' ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount")
+            toast.error(language === 'ar' ? "يرجى إدخال مبلغ صحيح" : "Please enter a valid amount")
             return
         }
 
@@ -102,7 +103,7 @@ export default function PaymentFlow({
                 setTransactionId(data.transactionId || null);
                 setStep('PENDING');
             } else {
-                alert(data.error || (language === 'ar' ? 'تعذر تسجيل طلب الدفع' : 'Unable to submit payment request'));
+                toast.error(data.error || (language === 'ar' ? 'تعذر تسجيل طلب الدفع' : 'Unable to submit payment request'));
             }
             setIsProcessing(false);
         } catch (error) {

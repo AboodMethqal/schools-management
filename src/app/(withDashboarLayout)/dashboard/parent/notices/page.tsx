@@ -51,6 +51,7 @@ export default function NoticesPage() {
   const [data, setData] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -174,7 +175,7 @@ export default function NoticesPage() {
 
                 <div className="pt-6 mt-6 border-t border-border-light flex justify-between items-center">
                   <button 
-                    onClick={() => alert('Detailed notice view coming soon!')}
+                    onClick={() => setSelectedNotice(notice)}
                     className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:gap-3 transition-all"
                   >
                     View Details <ChevronRight size={16} />
@@ -282,6 +283,57 @@ export default function NoticesPage() {
           </Card>
         </div>
       </div>
+
+      {/* Notice Detail Modal */}
+      {selectedNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-card rounded-3xl border border-border-light shadow-2xl max-w-xl w-full p-6 md:p-8 space-y-6">
+            <div className="flex items-start justify-between border-b border-border-light pb-4">
+              <div>
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 mb-2">
+                  {selectedNotice.category}
+                </span>
+                <h3 className="text-xl font-bold text-text-primary">
+                  {selectedNotice.title}
+                </h3>
+                <span className="text-xs text-text-muted mt-1 flex items-center gap-1.5">
+                  <Clock size={13} /> {selectedNotice.date}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedNotice(null)}
+                className="p-2 rounded-full hover:bg-bg-page text-text-muted hover:text-text-primary transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-bg-page/50 border border-border-light text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
+              {selectedNotice.desc}
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border-light">
+              <span className="text-xs font-bold text-text-muted">
+                {selectedNotice.priority} Priority
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-bg-page border border-border-light text-xs font-bold text-text-primary hover:bg-bg-card flex items-center gap-2"
+                >
+                  <Download size={14} /> {isAr ? 'طباعة' : 'Print'}
+                </button>
+                <button
+                  onClick={() => setSelectedNotice(null)}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                >
+                  {isAr ? 'إغلاق' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

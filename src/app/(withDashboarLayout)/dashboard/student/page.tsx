@@ -534,7 +534,7 @@ export default function StudentDashboardPage() {
               )}
             </div>
             <Link
-              href="#"
+              href="/dashboard/student/attendance"
               className="w-full mt-8 md:mt-12 py-3 md:py-4 rounded-xl md:rounded-2xl border-2 border-dashed border-border-light text-text-muted text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] hover:bg-bg-page hover:border-blue-300 hover:text-blue-600 transition-all active:scale-[0.98] block text-center"
             >
               {t('Full Calendar')}

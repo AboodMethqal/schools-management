@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getParentResultsData } from '@/app/actions/parent/results';
 import { useLanguage } from '@/context/LanguageProvider';
+import toast from 'react-hot-toast';
 
 // Simple className merger
 const cn = (...classes: (string | boolean | undefined)[]) => {
@@ -120,10 +121,16 @@ export default function ResultsPage() {
   ).sort() as string[];
 
   const handleSchoolWideDownload = () => {
-    if (!selectedPrintClass || !selectedPrintSubject) return alert("Please select both Class and Subject");
+    if (!selectedPrintClass || !selectedPrintSubject) {
+      toast.error(isAr ? "يرجى تحديد كل من الصف والمادة" : "Please select both Class and Subject");
+      return;
+    }
 
     const studentsInClass = allResults.filter((s: any) => s.currentClass === selectedPrintClass);
-    if (studentsInClass.length === 0) return alert("No students found in this class");
+    if (studentsInClass.length === 0) {
+      toast.error(isAr ? "لم يتم العثور على طلاب في هذا الصف" : "No students found in this class");
+      return;
+    }
 
     const headers = ["Student ID", "Student Name", "Class", "Gender", "Subject", "Marks", "Grade", "Point"];
     const rows: string[] = [];

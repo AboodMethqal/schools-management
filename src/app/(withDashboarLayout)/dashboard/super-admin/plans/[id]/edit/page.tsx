@@ -81,12 +81,12 @@ export default function EditPlan({ params }: { params: Promise<{ id: string }> }
                         storage: res.data.storage || ''
                     });
                 } else {
-                    alert('Failed to load plan details');
+                    Swal.fire(isAr ? 'خطأ!' : 'Error!', isAr ? 'فشل تحميل بيانات الخطة' : 'Failed to load plan details', 'error');
                     router.push('/dashboard/super-admin/plans');
                 }
             } catch (error) {
                 console.error('Error fetching plan:', error);
-                alert('Error loading plan details');
+                Swal.fire(isAr ? 'خطأ!' : 'Error!', isAr ? 'حدث خطأ أثناء تحميل الخطة' : 'Error loading plan details', 'error');
             } finally {
                 setInitialLoading(false);
             }

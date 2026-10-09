@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { addStudent, getStudent, updateStudent, deleteStudent } from "@/app/actions/student";
 import { useLanguage } from "@/context/LanguageProvider";
+import toast from "react-hot-toast";
 
 export default function StudentForm() {
     const { language } = useLanguage();
@@ -101,10 +102,14 @@ export default function StudentForm() {
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure?")) return;
+        if (!confirm(isAr ? "هل أنت متأكد من حذف هذا الطالب؟" : "Are you sure?")) return;
         const result = await deleteStudent(studentId!);
-        if (result.success) router.push("/dashboard/principal/students");
-        else alert(result.error);
+        if (result.success) {
+            toast.success(isAr ? "تم حذف الطالب بنجاح" : "Student removed successfully");
+            router.push("/dashboard/principal/students");
+        } else {
+            toast.error(result.error || (isAr ? "فشل الحذف" : "Failed to delete"));
+        }
     };
 
     if (loading) return (

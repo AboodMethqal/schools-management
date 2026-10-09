@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { findDemoAccount, DEMO_ACCOUNTS } from '@/lib/demo-accounts';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -101,6 +102,21 @@ export async function POST(request: Request) {
         });
 
         if (user) {
+          if (user.password && password) {
+            let isValid = false;
+            if (user.password.startsWith('$2')) {
+              isValid = await bcrypt.compare(password, user.password);
+            } else {
+              isValid = user.password === password;
+            }
+            if (!isValid) {
+              return NextResponse.json(
+                { error: 'Invalid credentials / بيانات الدخول غير صحيحة' },
+                { status: 401 }
+              );
+            }
+          }
+
           const sessionUser = {
             id: user.id,
             authUserId: user.authUserId,

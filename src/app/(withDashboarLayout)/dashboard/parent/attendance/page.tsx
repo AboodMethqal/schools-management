@@ -47,6 +47,9 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaveData, setLeaveData] = useState({ fromDate: '', toDate: '', reason: '' });
 
   useEffect(() => {
     async function loadData() {
@@ -139,10 +142,10 @@ export default function AttendancePage() {
           <div className="p-6 border-b border-border-light flex justify-between items-center bg-bg-page/30">
             <h3 className="font-bold text-text-primary flex items-center gap-2">{isAr ? "السجلات اليومية" : "Daily Logs"}</h3>
             <button 
-              onClick={() => alert('Attendance Policy:\n- 85% attendance required for exam eligibility.\n- Late entry after 08:30 AM.\n- Consecutive 3 days absence requires a medical certificate.')}
+              onClick={() => setShowRulesModal(true)}
               className="text-[10px] font-black text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 rounded-lg transition-colors border border-blue-500/10 uppercase tracking-widest"
             >
-              <Info size={14} /> View Rules
+              <Info size={14} /> {isAr ? 'لوائح الحضور' : 'View Rules'}
             </button>
           </div>
 
@@ -246,14 +249,163 @@ export default function AttendancePage() {
               Plan to be away? Submit an advance leave request to avoid unmarked absences.
             </p>
             <button 
-              onClick={() => alert('Leave Request Form will open in a new window.')}
+              onClick={() => setShowLeaveModal(true)}
               className="w-full py-3 bg-white text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-50 transition-colors shadow-lg"
             >
-              Open Request Form
+              {isAr ? 'تقديم طلب إجازة' : 'Open Request Form'}
             </button>
           </Card>
         </div>
       </div>
+
+      {/* Rules Modal */}
+      {showRulesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-card rounded-3xl border border-border-light shadow-2xl max-w-lg w-full p-6 md:p-8 space-y-5">
+            <div className="flex items-center justify-between border-b border-border-light pb-4">
+              <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                <Info size={20} className="text-blue-600" />
+                {isAr ? 'لوائح وسياسات الحضور والغياب' : 'Attendance Policy & Rules'}
+              </h3>
+              <button
+                onClick={() => setShowRulesModal(false)}
+                className="p-1 rounded-full hover:bg-bg-page text-text-muted hover:text-text-primary"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4 text-xs text-text-secondary leading-relaxed">
+              <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100 flex gap-3">
+                <span className="font-bold text-blue-600">01</span>
+                <p>
+                  {isAr
+                    ? 'يشترط حضور 85% من إجمالي أيام الدراسة للفصل للتأهل لدخول الامتحانات النهائية.'
+                    : 'A minimum of 85% attendance is required to be eligible for final semester examinations.'}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-100 flex gap-3">
+                <span className="font-bold text-amber-600">02</span>
+                <p>
+                  {isAr
+                    ? 'يُسجل الطالب متأخراً في حال الدخول بعد الساعة 08:30 صباحاً.'
+                    : 'Students entering after 08:30 AM will be officially recorded as Late.'}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-rose-50/50 border border-rose-100 flex gap-3">
+                <span className="font-bold text-rose-600">03</span>
+                <p>
+                  {isAr
+                    ? 'الغياب المتواصل لمدة 3 أيام يتطلب تقريراً طبياً معتمداً أو إشعاراً مسبقاً من ولي الأمر.'
+                    : 'Consecutive absence of 3 days requires an official medical certificate or prior notice from the guardian.'}
+                </p>
+              </div>
+            </div>
+            <div className="pt-2 text-end">
+              <button
+                onClick={() => setShowRulesModal(false)}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors"
+              >
+                {isAr ? 'فهمت ذلك' : 'Understood'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Request Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-card rounded-3xl border border-border-light shadow-2xl max-w-lg w-full p-6 md:p-8 space-y-5">
+            <div className="flex items-center justify-between border-b border-border-light pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-text-primary">
+                  {isAr ? 'طلب إجازة مدرسية' : 'Submit Leave Request'}
+                </h3>
+                <p className="text-xs text-text-muted mt-1">
+                  {isAr ? 'للطالب:' : 'For student:'} <span className="font-bold text-text-primary">{activeChild?.name}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="p-1 rounded-full hover:bg-bg-page text-text-muted hover:text-text-primary"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setShowLeaveModal(false);
+                setLeaveData({ fromDate: '', toDate: '', reason: '' });
+                alert(
+                  isAr
+                    ? `تم تسجيل طلب الإجازة للطالب (${activeChild?.name}) بنجاح وهو قيد مراجعة إدارة المدرسة.`
+                    : `Leave request for (${activeChild?.name}) submitted successfully! Awaiting review.`
+                );
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                    {isAr ? 'من تاريخ' : 'From Date'}
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={leaveData.fromDate}
+                    onChange={(e) => setLeaveData({ ...leaveData, fromDate: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-bg-page border border-border-light text-xs font-medium outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                    {isAr ? 'إلى تاريخ' : 'To Date'}
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={leaveData.toDate}
+                    onChange={(e) => setLeaveData({ ...leaveData, toDate: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-bg-page border border-border-light text-xs font-medium outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                  {isAr ? 'سبب الإجازة' : 'Reason for Leave'}
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={leaveData.reason}
+                  onChange={(e) => setLeaveData({ ...leaveData, reason: e.target.value })}
+                  placeholder={isAr ? 'عذر طبي، ظروف عائلية...' : 'Medical reason, family emergency...'}
+                  className="w-full p-3 rounded-xl bg-bg-page border border-border-light text-xs font-medium outline-none focus:border-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-border-light flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLeaveModal(false)}
+                  className="px-4 py-2 rounded-xl border border-border-light text-xs font-bold text-text-muted hover:text-text-primary"
+                >
+                  {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20"
+                >
+                  {isAr ? 'إرسال الطلب' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

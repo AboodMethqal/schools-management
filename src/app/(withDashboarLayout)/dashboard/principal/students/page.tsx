@@ -19,6 +19,7 @@ import {
   Edit
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 function StudentActions({ student, onDeleted }: { student: any, onDeleted: () => void }) {
   const router = useRouter();
@@ -28,8 +29,12 @@ function StudentActions({ student, onDeleted }: { student: any, onDeleted: () =>
   const handleDelete = async () => {
     if (!confirm(language === 'ar' ? `هل أنت متأكد من حذف ${student.name}؟` : `Are you sure you want to delete ${student.name}?`)) return;
     const res = await deleteStudent(student.id);
-    if (res.success) onDeleted();
-    else alert(res.error);
+    if (res.success) {
+      toast.success(language === 'ar' ? 'تم حذف الطالب بنجاح' : 'Student removed successfully');
+      onDeleted();
+    } else {
+      toast.error(res.error || (language === 'ar' ? 'فشل حذف الطالب' : 'Failed to delete student'));
+    }
     setIsOpen(false);
   };
 

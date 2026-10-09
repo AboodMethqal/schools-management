@@ -122,6 +122,11 @@ export const teacherMenuItems: DashboardMenuItem[] = [
 export const superAdminMenuItems: DashboardMenuItem[] = [
   { title: 'Overview', url: '/dashboard/super-admin', icon: LayoutDashboard },
   {
+    title: 'School Applications',
+    url: '/dashboard/super-admin/applications',
+    icon: FileText,
+  },
+  {
     title: 'Schools Management',
     url: '/dashboard/super-admin/schools',
     icon: Building2,

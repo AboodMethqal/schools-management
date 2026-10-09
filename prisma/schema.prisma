@@ -41,6 +41,7 @@ model School {
   teachers         Teacher[]
   expenses         Expense[]
   subscriptions    Subscription[]
+  applications     SchoolApplication[]
 }
 
 model Subscription {
@@ -200,6 +201,7 @@ model User {
   email          String          @unique
   name           String
   profileImage   String?
+  password       String?
   notifications  Notification[]  @relation("UserNotifications")
   announcements  Announcement[]  @relation("AuthorAnnouncements")
   teacherNotices TeacherNotice[] @relation("AuthorTeacherNotices")
@@ -562,3 +564,27 @@ model SystemConfig {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model SchoolApplication {
+  id            String    @id @default(cuid())
+  applicationNo String    @unique
+  schoolName    String
+  adminName     String
+  email         String
+  phone         String
+  instituteCode String?
+  passwordHash  String?
+  message       String?
+  status        String    @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  reviewNotes   String?
+  schoolId      String?
+  school        School?   @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([email])
+}
+

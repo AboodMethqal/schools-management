@@ -19,6 +19,7 @@ import { getTeachers, deleteTeacher } from "@/app/actions/teacher";
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useLanguage } from "@/context/LanguageProvider";
+import toast from "react-hot-toast";
 
 function TeacherActions({ teacher, onDeleted }: { teacher: any, onDeleted: () => void }) {
   const router = useRouter();
@@ -29,8 +30,12 @@ function TeacherActions({ teacher, onDeleted }: { teacher: any, onDeleted: () =>
   const handleDelete = async () => {
     if (!confirm(isAr ? `هل أنت متأكد من حذف ${teacher.name}؟` : `Are you sure you want to delete ${teacher.name}?`)) return;
     const res = await deleteTeacher(teacher.id);
-    if (res.success) onDeleted();
-    else alert(res.error);
+    if (res.success) {
+      toast.success(isAr ? 'تم حذف المعلم بنجاح' : 'Teacher removed successfully');
+      onDeleted();
+    } else {
+      toast.error(res.error || (isAr ? 'فشل حذف المعلم' : 'Failed to delete teacher'));
+    }
     setIsOpen(false);
   };
 
