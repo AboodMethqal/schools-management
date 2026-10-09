@@ -11,7 +11,7 @@ import {
     Users, MapPin, CheckCircle2, AlertCircle,
     RefreshCcw, Trash2, Mail, Lock, ShieldCheck, Info
 } from "lucide-react";
-import { addStudent, getStudent, updateStudent, deleteStudent } from "@/app/actions/student";
+import { addStudent, getStudent, updateStudent, deleteStudent, getAvailableClasses } from "@/app/actions/student";
 import { useLanguage } from "@/context/LanguageProvider";
 import toast from "react-hot-toast";
 
@@ -31,16 +31,25 @@ export default function StudentForm() {
     const [form, setForm] = useState({
         registrationNo: "", firstName: "", lastName: "",
         dateOfBirth: "", gender: "", bloodGroup: "",
-        religion: "", currentClass: "", section: "",
+        religion: "", currentClass: "", section: "", sectionId: "",
         rollNo: "", session: "", fatherName: "",
         motherName: "", guardianPhone: "", emergencyContact: "",
-        email: "", password: "",
-        parentEmail: "", parentPassword: "",
+        email: "", password: "", confirmPassword: "",
+        parentEmail: "", parentPassword: "", confirmParentPassword: "",
         presentAddress: "", permanentAddress: "",
     });
 
+    const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+
     useEffect(() => {
         let active = true;
+        // Fetch real classes from Turso database
+        getAvailableClasses().then(res => {
+            if (active && res.success && res.data) {
+                setAvailableClasses(res.data);
+            }
+        }).catch(err => console.error("Error fetching classes:", err));
+
         if (isEdit && studentId) {
             const loadData = async () => {
                 setLoading(true);
@@ -59,6 +68,7 @@ export default function StudentForm() {
                             religion: d.religion || "",
                             currentClass: d.currentClass || "",
                             section: d.sectionName || "",
+                            sectionId: d.sectionId || "",
                             rollNo: d.rollNo ? String(d.rollNo) : "",
                             session: d.session || "",
                             fatherName: d.fatherName || "",
@@ -67,8 +77,10 @@ export default function StudentForm() {
                             emergencyContact: d.emergencyContact || "",
                             email: d.email || "",
                             password: "",
+                            confirmPassword: "",
                             parentEmail: d.parents?.[0]?.email || "",
                             parentPassword: "",
+                            confirmParentPassword: "",
                             presentAddress: d.presentAddress || "",
                             permanentAddress: d.permanentAddress || "",
                         });
@@ -88,8 +100,28 @@ export default function StudentForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
         setError("");
+
+        if (!isEdit) {
+            if (form.password && form.password.length < 6) {
+                setError(isAr ? "يجب أن تتكون كلمة المرور من 6 خانات على الأقل" : "Password must be at least 6 characters");
+                return;
+            }
+            if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
+                setError(isAr ? "كلمتا مرور الطالب غير متطابقتين" : "Student passwords do not match");
+                return;
+            }
+            if (form.parentPassword && form.parentPassword.length < 6) {
+                setError(isAr ? "يجب أن تتكون كلمة مرور ولي الأمر من 6 خانات على الأقل" : "Parent password must be at least 6 characters");
+                return;
+            }
+            if (form.parentPassword && form.confirmParentPassword && form.parentPassword !== form.confirmParentPassword) {
+                setError(isAr ? "كلمتا مرور ولي الأمر غير متطابقتين" : "Parent passwords do not match");
+                return;
+            }
+        }
+
+        setIsSubmitting(true);
         try {
             const submissionData = { ...form, rollNo: Number(form.rollNo) || 0 };
             const result = isEdit ? await updateStudent(studentId!, submissionData) : await addStudent(submissionData);
@@ -174,16 +206,20 @@ export default function StudentForm() {
                         <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border dark:border-slate-800 shadow-sm space-y-6">
                             <div className="flex items-center gap-2 border-b dark:border-slate-800 pb-4">
                                 <ShieldCheck className="text-primary dark:text-blue-400" size={20} />
-                                <h3 className="text-sm font-black uppercase tracking-widest dark:text-white">{isAr ? 'بيانات تسجيل الدخول' : 'Login Credentials'}</h3>
+                                <h3 className="text-sm font-black uppercase tracking-widest dark:text-white">{isAr ? 'بيانات تسجيل الدخول للطالب' : 'Student Login Credentials'}</h3>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-muted-foreground dark:text-slate-400 tracking-widest">{isAr ? 'البريد الإلكتروني *' : 'Email Address *'}</label>
                                     <Input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="student@school.com" className="h-12 rounded-xl dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-muted-foreground dark:text-slate-400 tracking-widest">{isAr ? 'كلمة المرور *' : 'Login Password *'}</label>
-                                    <Input name="password" type="password" value={form.password} onChange={handleChange} required={!isEdit} placeholder={isEdit ? "••••••••" : (isAr ? "الافتراضي: Student@1234" : "Default: Student@1234")} className="h-12 rounded-xl dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground dark:text-slate-400 tracking-widest">{isAr ? 'كلمة المرور المؤقتة *' : 'Temporary Password *'}</label>
+                                    <Input name="password" type="password" value={form.password} onChange={handleChange} required={!isEdit} placeholder={isEdit ? "••••••••" : (isAr ? "كلمة المرور المؤقتة (6+ أحرف)" : "Temp Password (6+ chars)")} className="h-12 rounded-xl dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground dark:text-slate-400 tracking-widest">{isAr ? 'تأكيد كلمة المرور *' : 'Confirm Password *'}</label>
+                                    <Input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required={!isEdit} placeholder={isEdit ? "••••••••" : (isAr ? "تأكيد كلمة المرور" : "Confirm Password")} className="h-12 rounded-xl dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
                                 </div>
                             </div>
                         </div>
@@ -231,13 +267,69 @@ export default function StudentForm() {
                             <div className="space-y-4">
                                 <h4 className="text-[11px] font-black uppercase tracking-tighter flex items-center gap-2 dark:text-blue-400"><GraduationCap size={16} /> {isAr ? 'المعلومات الأكاديمية' : 'Academic Info'}</h4>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <select name="currentClass" value={form.currentClass} onChange={handleChange} required className="h-11 rounded-lg border dark:border-slate-800 px-3 text-xs font-medium bg-white dark:bg-slate-950 dark:text-white outline-none">
-                                        <option value="">{isAr ? 'اختر الفصل *' : 'Select Class *'}</option>
-                                        {[...Array(12)].map((_, i) => (
-                                            <option key={i + 1} value={`Class ${i + 1}`}>{isAr ? `الصف ${i + 1}` : `Class ${i + 1}`}</option>
-                                        ))}
+                                    <select
+                                        name="currentClass"
+                                        value={form.currentClass}
+                                        onChange={(e) => {
+                                            const selectedClass = e.target.value;
+                                            const matchedClass = availableClasses.find(c => c.name === selectedClass);
+                                            const firstSec = matchedClass?.sections?.[0];
+                                            setForm(prev => ({
+                                                ...prev,
+                                                currentClass: selectedClass,
+                                                section: firstSec?.name || "",
+                                                sectionId: firstSec?.id || ""
+                                            }));
+                                        }}
+                                        required
+                                        className="h-11 rounded-lg border dark:border-slate-800 px-3 text-xs font-medium bg-white dark:bg-slate-950 dark:text-white outline-none"
+                                    >
+                                        <option value="">{isAr ? 'اختر الصف / المرحلة *' : 'Select Class / Grade *'}</option>
+                                        {availableClasses.length > 0 ? (
+                                            availableClasses.map((cls) => (
+                                                <option key={cls.id} value={cls.name}>{cls.name}</option>
+                                            ))
+                                        ) : (
+                                            [...Array(12)].map((_, i) => (
+                                                <option key={i + 1} value={`Class ${i + 1}`}>{isAr ? `الصف ${i + 1}` : `Class ${i + 1}`}</option>
+                                            ))
+                                        )}
                                     </select>
-                                    <Input name="section" value={form.section} onChange={handleChange} placeholder={isAr ? "الشعبة *" : "Section *"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+
+                                    {(() => {
+                                        const currentClassObj = availableClasses.find(c => c.name === form.currentClass);
+                                        const sections = currentClassObj?.sections || [];
+                                        if (sections.length > 0) {
+                                            return (
+                                                <select
+                                                    name="sectionId"
+                                                    value={form.sectionId}
+                                                    onChange={(e) => {
+                                                        const secId = e.target.value;
+                                                        const sec = sections.find((s: any) => s.id === secId);
+                                                        setForm(prev => ({ ...prev, sectionId: secId, section: sec?.name || "" }));
+                                                    }}
+                                                    required
+                                                    className="h-11 rounded-lg border dark:border-slate-800 px-3 text-xs font-medium bg-white dark:bg-slate-950 dark:text-white outline-none"
+                                                >
+                                                    <option value="">{isAr ? 'اختر الشعبة *' : 'Select Section *'}</option>
+                                                    {sections.map((s: any) => (
+                                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                                    ))}
+                                                </select>
+                                            );
+                                        }
+                                        return (
+                                            <Input
+                                                name="section"
+                                                value={form.section}
+                                                onChange={handleChange}
+                                                placeholder={isAr ? "الشعبة *" : "Section *"}
+                                                className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                                            />
+                                        );
+                                    })()}
+
                                     <Input name="rollNo" type="number" value={form.rollNo} onChange={handleChange} placeholder={isAr ? "رقم الجلوس *" : "Roll *"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
                                     <Input name="session" value={form.session} onChange={handleChange} placeholder={isAr ? "العام الدراسي *" : "Session *"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
                                 </div>
@@ -251,8 +343,11 @@ export default function StudentForm() {
 
                                     <div className="pt-2 border-t dark:border-slate-800 space-y-3">
                                         <p className="text-[10px] font-bold uppercase text-muted-foreground dark:text-slate-500 tracking-widest">{isAr ? 'حساب ولي الأمر (اختياري)' : 'Parent Account (Optional)'}</p>
-                                        <Input name="parentEmail" type="email" value={form.parentEmail} onChange={handleChange} placeholder={isAr ? "بريد ولي الأمر (pa.regno@school.site)" : "Parent Email (pa.regno@school.site)"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
-                                        <Input name="parentPassword" type="password" value={form.parentPassword} onChange={handleChange} placeholder={isAr ? "كلمة مرور ولي الأمر (الافتراضي: Parent@1234)" : "Parent Password (Def: Parent@1234)"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+                                        <Input name="parentEmail" type="email" value={form.parentEmail} onChange={handleChange} placeholder={isAr ? "بريد ولي الأمر" : "Parent Email (e.g. parent@school.com)"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Input name="parentPassword" type="password" value={form.parentPassword} onChange={handleChange} placeholder={isAr ? "كلمة المرور المؤقتة" : "Parent Temp Password"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+                                            <Input name="confirmParentPassword" type="password" value={form.confirmParentPassword} onChange={handleChange} placeholder={isAr ? "تأكيد كلمة المرور" : "Confirm Parent Password"} className="h-11 rounded-lg text-xs dark:bg-slate-950 dark:border-slate-800 dark:text-white" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

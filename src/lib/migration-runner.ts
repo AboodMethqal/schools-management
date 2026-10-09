@@ -74,6 +74,7 @@ export const CANONICAL_MIGRATION_STATEMENTS = [
     "CREATE UNIQUE INDEX IF NOT EXISTS \"QuizSubmission_roomCode_studentEmail_key\" ON \"QuizSubmission\"(\"roomCode\", \"studentEmail\")",
     "ALTER TABLE \"User\" ADD COLUMN \"password\" TEXT",
     "ALTER TABLE \"User\" ADD COLUMN \"profileImage\" TEXT",
+    "ALTER TABLE \"User\" ADD COLUMN \"mustChangePassword\" BOOLEAN NOT NULL DEFAULT 0",
     "CREATE TABLE IF NOT EXISTS \"SchoolApplication\" (\n    \"id\" TEXT NOT NULL PRIMARY KEY,\n    \"applicationNo\" TEXT NOT NULL,\n    \"schoolName\" TEXT NOT NULL,\n    \"adminName\" TEXT NOT NULL,\n    \"email\" TEXT NOT NULL,\n    \"phone\" TEXT NOT NULL,\n    \"instituteCode\" TEXT,\n    \"passwordHash\" TEXT,\n    \"message\" TEXT,\n    \"status\" TEXT NOT NULL DEFAULT 'PENDING',\n    \"createdAt\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\n    \"updatedAt\" DATETIME NOT NULL,\n    \"reviewedAt\" DATETIME,\n    \"reviewedBy\" TEXT,\n    \"reviewNotes\" TEXT,\n    \"schoolId\" TEXT,\n    CONSTRAINT \"SchoolApplication_schoolId_fkey\" FOREIGN KEY (\"schoolId\") REFERENCES \"School\" (\"id\") ON DELETE SET NULL ON UPDATE CASCADE\n)",
     "CREATE UNIQUE INDEX IF NOT EXISTS \"SchoolApplication_applicationNo_key\" ON \"SchoolApplication\"(\"applicationNo\")",
     "CREATE INDEX IF NOT EXISTS \"SchoolApplication_status_idx\" ON \"SchoolApplication\"(\"status\")",
@@ -225,6 +226,7 @@ export const EXPECTED_SCHEMA_COLUMNS: Record<string, Record<string, string>> = {
         name: 'TEXT',
         profileImage: 'TEXT',
         password: 'TEXT',
+        mustChangePassword: 'BOOLEAN',
     },
     StudyMaterial: {
         id: 'TEXT',
@@ -543,52 +545,72 @@ export async function applyDatabaseMigrations() {
     // 4. Seed demo school and users if tables are empty
     let demoSeeded = false;
     try {
-        const schoolCheck = await client.execute('SELECT COUNT(*) as count FROM "School"');
-        const schoolCount = Number(schoolCheck.rows[0]?.count || 0);
-        if (schoolCount === 0) {
+        // 4.1 Ensure demo school exists
+        await client.execute({
+            sql: `INSERT OR IGNORE INTO "School" (id, schoolName, slug, schoolEmail, phone, address, plan, duration, schoolCategory, expectedStudents, registrationId, language, createdAt, updatedAt)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            args: [
+                DEMO_SCHOOL_ID,
+                'مدرسة مثقال النموذجية الحديثة',
+                'methqal-model-school',
+                'contact@methqal.tech',
+                '+967 1 234 567',
+                'صنعاء، الجمهورية اليمنية',
+                'pro',
+                '12',
+                'combined',
+                450,
+                'MTH-SCH-2026-001',
+                'arabic'
+            ]
+        });
+
+        // 4.2 Ensure demo classes exist
+        await client.execute({
+            sql: `INSERT OR IGNORE INTO "Class" (id, name, schoolId, createdAt, updatedAt)
+                  VALUES ('class-10-a', 'Grade 10 / الصف العاشر', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            args: [DEMO_SCHOOL_ID]
+        });
+        await client.execute({
+            sql: `INSERT OR IGNORE INTO "Class" (id, name, schoolId, createdAt, updatedAt)
+                  VALUES ('class-9-a', 'Grade 9 / الصف التاسع', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            args: [DEMO_SCHOOL_ID]
+        });
+
+        // 4.3 Ensure demo sections exist
+        await client.execute({
+            sql: `INSERT OR IGNORE INTO "Section" (id, name, classId, createdAt, updatedAt)
+                  VALUES ('sec-10-a', 'Section A / الشعبة (أ)', 'class-10-a', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+        });
+        await client.execute({
+            sql: `INSERT OR IGNORE INTO "Section" (id, name, classId, createdAt, updatedAt)
+                  VALUES ('sec-10-b', 'Section B / الشعبة (ب)', 'class-10-a', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+        });
+        await client.execute({
+            sql: `INSERT OR IGNORE INTO "Section" (id, name, classId, createdAt, updatedAt)
+                  VALUES ('sec-9-a', 'Section A / الشعبة (أ)', 'class-9-a', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+        });
+
+        // 4.4 Ensure demo users exist
+        const defaultPasswordHash = await bcrypt.hash('Password123!', 10);
+        for (const acc of Object.values(DEMO_ACCOUNTS)) {
+            const pwdHash = acc.password ? await bcrypt.hash(acc.password, 10) : defaultPasswordHash;
             await client.execute({
-                sql: `INSERT INTO "School" (id, schoolName, slug, schoolEmail, phone, address, plan, duration, schoolCategory, expectedStudents, registrationId, language, createdAt, updatedAt)
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                sql: `INSERT OR IGNORE INTO "User" (id, authUserId, email, name, role, schoolId, status, password, mustChangePassword, createdAt, updatedAt)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
                 args: [
-                    DEMO_SCHOOL_ID,
-                    'مدرسة مثقال النموذجية الحديثة',
-                    'methqal-model-school',
-                    'contact@methqal.tech',
-                    '+967 1 234 567',
-                    'صنعاء، الجمهورية اليمنية',
-                    'pro',
-                    '12',
-                    'combined',
-                    450,
-                    'MTH-SCH-2026-001',
-                    'arabic'
+                    acc.id,
+                    acc.authUserId,
+                    acc.email,
+                    acc.name,
+                    acc.role,
+                    acc.schoolId || null,
+                    'active',
+                    pwdHash
                 ]
             });
         }
-
-        const userCheck = await client.execute('SELECT COUNT(*) as count FROM "User"');
-        const userCount = Number(userCheck.rows[0]?.count || 0);
-        if (userCount === 0) {
-            const defaultPasswordHash = await bcrypt.hash('Password123!', 10);
-
-            for (const acc of Object.values(DEMO_ACCOUNTS)) {
-                await client.execute({
-                    sql: `INSERT INTO "User" (id, authUserId, email, name, role, schoolId, status, password, createdAt, updatedAt)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-                    args: [
-                        acc.id,
-                        acc.authUserId,
-                        acc.email,
-                        acc.name,
-                        acc.role,
-                        acc.schoolId || null,
-                        'active',
-                        defaultPasswordHash
-                    ]
-                });
-            }
-            demoSeeded = true;
-        }
+        demoSeeded = true;
     } catch (err: unknown) {
         errors.push(`Seeding note: ${(err as Error).message}`);
     }

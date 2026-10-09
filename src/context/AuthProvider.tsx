@@ -29,7 +29,7 @@ type AuthContextType = {
   signIn: (
     email: string,
     password: string,
-  ) => Promise<{ error: any; role: UserRole | null }>;
+  ) => Promise<{ error: any; role: UserRole | null; mustChangePassword?: boolean }>;
 
   signOut: () => Promise<void>;
 
@@ -106,7 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         const resolvedRole = normalizeRole(data.role);
         setRole(resolvedRole);
-        return { error: null, role: resolvedRole };
+        const mustChange = !!data?.mustChangePassword || !!data?.user?.mustChangePassword;
+        return { error: null, role: resolvedRole, mustChangePassword: mustChange };
       }
 
       return {

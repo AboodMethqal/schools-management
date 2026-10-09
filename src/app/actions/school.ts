@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+import bcrypt from "bcryptjs";
+
 export async function createSchool(formData: any) {
   console.log("📥 Creating new school and principal:", formData.schoolName);
 
@@ -18,12 +20,18 @@ export async function createSchool(formData: any) {
   let accountantAuthUserId: string | null = null;
 
   try {
+    const rawAdminPass = formData.adminPassword || "School@123456";
+    const rawAccountantPass = formData.accountantPassword || "Accountant@123456";
+
+    const adminPasswordHash = await bcrypt.hash(rawAdminPass, 10);
+    const accountantPasswordHash = await bcrypt.hash(rawAccountantPass, 10);
+
     // 1️⃣ Create the Principal in Supabase Auth if service role key is present
     if (process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.includes("dummy")) {
       try {
         const { data: adminAuthData } = await supabaseAdmin.auth.admin.createUser({
           email: formData.adminEmail,
-          password: formData.adminPassword || "School@1234",
+          password: rawAdminPass,
           email_confirm: true,
           user_metadata: { role: 'admin' }
         });
@@ -35,7 +43,7 @@ export async function createSchool(formData: any) {
       try {
         const { data: accountantAuthData } = await supabaseAdmin.auth.admin.createUser({
           email: formData.accountantEmail,
-          password: formData.accountantPassword || "Accountant@1234",
+          password: rawAccountantPass,
           email_confirm: true,
           user_metadata: { role: 'accountant' }
         });
@@ -74,13 +82,14 @@ export async function createSchool(formData: any) {
 
       // 3️⃣ Update or Create Admin User record
       await tx.user.upsert({
-        where: { authUserId: adminAuthUserId as string },
+        where: { email: formData.adminEmail },
         update: {
           name: formData.adminName,
-          email: formData.adminEmail,
           role: "admin",
           schoolId: newSchool.id,
-          status: "active"
+          status: "active",
+          password: adminPasswordHash,
+          mustChangePassword: true,
         },
         create: {
           authUserId: adminAuthUserId as string,
@@ -88,19 +97,32 @@ export async function createSchool(formData: any) {
           email: formData.adminEmail,
           role: "admin",
           schoolId: newSchool.id,
-          status: "active"
+          status: "active",
+          password: adminPasswordHash,
+          mustChangePassword: true,
         },
       });
 
       // 4️⃣ Create Accountant User record
-      await tx.user.create({
-        data: {
+      await tx.user.upsert({
+        where: { email: formData.accountantEmail },
+        update: {
+          name: formData.accountantName,
+          role: "accountant",
+          schoolId: newSchool.id,
+          status: "active",
+          password: accountantPasswordHash,
+          mustChangePassword: true,
+        },
+        create: {
           authUserId: accountantAuthUserId as string,
           name: formData.accountantName,
           email: formData.accountantEmail,
           role: "accountant",
           schoolId: newSchool.id,
-          status: "active"
+          status: "active",
+          password: accountantPasswordHash,
+          mustChangePassword: true,
         }
       });
 

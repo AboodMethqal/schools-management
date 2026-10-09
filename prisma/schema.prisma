@@ -202,6 +202,7 @@ model User {
   name           String
   profileImage   String?
   password       String?
+  mustChangePassword Boolean     @default(false)
   notifications  Notification[]  @relation("UserNotifications")
   announcements  Announcement[]  @relation("AuthorAnnouncements")
   teacherNotices TeacherNotice[] @relation("AuthorTeacherNotices")

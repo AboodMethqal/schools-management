@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/getCurrentUser"
 import { prisma } from "@/lib/prisma"
 // import { email, success } from "zod"
 
+import bcrypt from "bcryptjs"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 
 export async function addTeacher(formData: any) {
@@ -12,22 +13,41 @@ export async function addTeacher(formData: any) {
   const currentUser = await getCurrentUser()
   if (!currentUser || (currentUser.role as string) !== 'admin') {
     console.error("❌ Unauthorized access attempt by:", currentUser?.email || "Unknown")
-    return { success: false, error: "Unauthorized: Principal access required." }
+    return { success: false, error: "Unauthorized: Principal access required / غير مصرح: يتطلب صلاحية مدير المدرسة." }
+  }
+
+  // Temporary password validation
+  const teacherPassword = formData.password?.trim() || "";
+  const confirmPassword = formData.confirmPassword?.trim() || "";
+
+  if (teacherPassword.length < 6) {
+    return { success: false, error: "Temporary password must be at least 6 characters / يجب أن تتكون كلمة المرور المؤقتة من 6 خانات على الأقل." };
+  }
+
+  if (confirmPassword && teacherPassword !== confirmPassword) {
+    return { success: false, error: "Temporary passwords do not match / كلمتا المرور غير متطابقتين." };
   }
 
   let authUserId: string | null = null;
   try {
-    const schoolId = currentUser.schoolId
-    if (!schoolId) {
-      return { success: false, error: "System Error: Your account is not linked to any school." };
+    let schoolId = currentUser.schoolId;
+    let targetSchool = schoolId ? await prisma.school.findUnique({ where: { id: schoolId } }) : null;
+    if (!targetSchool) {
+      targetSchool = await prisma.school.findFirst();
+      if (!targetSchool) {
+        return { success: false, error: "System Error: No school found in database / خطأ في النظام: لم يتم العثور على مدرسة." };
+      }
+      schoolId = targetSchool.id;
     }
+
+    const hashedPassword = await bcrypt.hash(teacherPassword, 10);
 
     // Attempt Supabase Admin user creation if service role key exists, otherwise use local ID
     if (process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.includes("dummy")) {
       try {
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: formData.email,
-          password: "Teacher@1234",
+          password: teacherPassword,
           email_confirm: true,
           user_metadata: { role: 'teacher' }
         });
@@ -51,18 +71,19 @@ export async function addTeacher(formData: any) {
     const result = await prisma.$transaction(async (tx: any) => {
       const birthDate = new Date(formData.dateOfBirth)
       if (isNaN(birthDate.getTime())) {
-        throw new Error("Invalid date format provided for Date of Birth.")
+        throw new Error("Invalid date format provided for Date of Birth / تاريخ الميلاد غير صالح")
       }
 
       // A. Update or Create Core User
       const user = await tx.user.upsert({
-        where: { authUserId: authUserId as string },
+        where: { email: formData.email },
         update: {
           name: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email,
           role: "teacher",
           schoolId: schoolId,
-          status: "active"
+          status: "active",
+          password: hashedPassword,
+          mustChangePassword: true
         },
         create: {
           authUserId: authUserId as string,
@@ -70,7 +91,9 @@ export async function addTeacher(formData: any) {
           email: formData.email,
           role: "teacher",
           schoolId: schoolId,
-          status: "active"
+          status: "active",
+          password: hashedPassword,
+          mustChangePassword: true
         }
       })
 

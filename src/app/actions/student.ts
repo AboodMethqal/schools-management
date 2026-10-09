@@ -17,7 +17,7 @@ async function ensureDb() {
     }
 }
 
-export async function addStudent(formData: {
+export interface AddStudentFormData {
     registrationNo: string
     firstName: string
     lastName: string
@@ -27,6 +27,7 @@ export async function addStudent(formData: {
     religion?: string
     currentClass: string
     section: string
+    sectionId?: string
     rollNo: number
     session: string
     fatherName: string
@@ -37,9 +38,67 @@ export async function addStudent(formData: {
     presentAddress: string
     permanentAddress?: string
     password?: string
+    confirmPassword?: string
     parentEmail?: string
     parentPassword?: string
-}) {
+    confirmParentPassword?: string
+}
+
+export async function getAvailableClasses() {
+    await ensureDb();
+    try {
+        const currentUser = await getCurrentUser();
+        let schoolId = currentUser?.schoolId;
+
+        let school = schoolId ? await prisma.school.findUnique({ where: { id: schoolId } }) : null;
+        if (!school) {
+            school = await prisma.school.findFirst();
+            schoolId = school?.id;
+        }
+
+        if (!schoolId) return { success: true, data: [] };
+
+        let classes = await prisma.class.findMany({
+            where: { schoolId },
+            include: { sections: true },
+            orderBy: { name: 'asc' }
+        });
+
+        // Initialize standard grade classes if empty
+        if (classes.length === 0) {
+            const standardGrades = [
+                { name: "Grade 10 / الصف العاشر", sections: ["Section A / الشعبة (أ)", "Section B / الشعبة (ب)"] },
+                { name: "Grade 9 / الصف التاسع", sections: ["Section A / الشعبة (أ)", "Section B / الشعبة (ب)"] },
+                { name: "Grade 8 / الصف الثامن", sections: ["Section A / الشعبة (أ)", "Section B / الشعبة (ب)"] },
+                { name: "Grade 7 / الصف السابع", sections: ["Section A / الشعبة (أ)", "Section B / الشعبة (ب)"] },
+            ];
+
+            for (const g of standardGrades) {
+                const cls = await prisma.class.create({
+                    data: { name: g.name, schoolId }
+                });
+                for (const secName of g.sections) {
+                    await prisma.section.create({
+                        data: { name: secName, classId: cls.id }
+                    });
+                }
+            }
+
+            classes = await prisma.class.findMany({
+                where: { schoolId },
+                include: { sections: true },
+                orderBy: { name: 'asc' }
+            });
+        }
+
+        return { success: true, data: classes };
+    } catch (err: any) {
+        console.error("❌ getAvailableClasses Error:", err);
+        return { success: false, data: [] };
+    }
+}
+
+export async function addStudent(formData: AddStudentFormData) {
     console.log("📥 Receiving student request:", formData.registrationNo);
     await ensureDb();
 
@@ -48,6 +107,25 @@ export async function addStudent(formData: {
 
     if (!currentUser || (currentUser.role as string) !== 'admin') {
         return { success: false, error: "Unauthorized: Principal access required / غير مصرح: يتطلب صلاحية مدير المدرسة." }
+    }
+
+    // Password policy & confirmation validations
+    if (formData.password) {
+        if (formData.password.length < 6) {
+            return { success: false, error: "Student temporary password must be at least 6 characters / يجب أن تتكون كلمة مرور الطالب من 6 خانات على الأقل." };
+        }
+        if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+            return { success: false, error: "Student temporary passwords do not match / كلمتا مرور الطالب غير متطابقتين." };
+        }
+    }
+
+    if (formData.parentPassword) {
+        if (formData.parentPassword.length < 6) {
+            return { success: false, error: "Parent temporary password must be at least 6 characters / يجب أن تتكون كلمة مرور ولي الأمر من 6 خانات على الأقل." };
+        }
+        if (formData.confirmParentPassword && formData.parentPassword !== formData.confirmParentPassword) {
+            return { success: false, error: "Parent temporary passwords do not match / كلمتا مرور ولي الأمر غير متطابقتين." };
+        }
     }
 
     let authUserId: string | null = null;
@@ -70,15 +148,18 @@ export async function addStudent(formData: {
         const safeEmail = formData.email?.trim() || `st.${sanitizedReg}@school.site`;
         const parentSafeEmail = formData.parentEmail?.trim() || `pa.${sanitizedReg}@school.site`;
 
-        const studentPasswordHash = await bcrypt.hash(formData.password?.trim() || "Student@1234", 10);
-        const parentPasswordHash = await bcrypt.hash(formData.parentPassword?.trim() || "Parent@1234", 10);
+        const studentPass = formData.password?.trim() || "Student@1234";
+        const parentPass = formData.parentPassword?.trim() || "Parent@1234";
+
+        const studentPasswordHash = await bcrypt.hash(studentPass, 10);
+        const parentPasswordHash = await bcrypt.hash(parentPass, 10);
 
         // 1. Attempt Supabase Auth accounts if admin key is present
         if (process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.includes("dummy")) {
             try {
                 const { data: authData } = await supabaseAdmin.auth.admin.createUser({
                     email: safeEmail,
-                    password: formData.password || "Student@1234",
+                    password: studentPass,
                     email_confirm: true,
                     user_metadata: { role: 'student' }
                 });
@@ -90,7 +171,7 @@ export async function addStudent(formData: {
             try {
                 const { data: pAuthData } = await supabaseAdmin.auth.admin.createUser({
                     email: parentSafeEmail,
-                    password: formData.parentPassword || "Parent@1234",
+                    password: parentPass,
                     email_confirm: true,
                     user_metadata: { role: 'parent' }
                 });
@@ -110,8 +191,28 @@ export async function addStudent(formData: {
         let createdStudent: any;
 
         await prisma.$transaction(async (tx: any) => {
-            const schoolId = currentUser.schoolId; // Always use principal's school
-            if (!schoolId) throw new Error("Unauthorized: School ID not found for this user.");
+            // Validate schoolId existence against School table
+            let schoolId = currentUser.schoolId;
+            let targetSchool = schoolId ? await tx.school.findUnique({ where: { id: schoolId } }) : null;
+            if (!targetSchool) {
+                targetSchool = await tx.school.findFirst();
+                if (!targetSchool) {
+                    throw new Error("No school found in the database. Please ensure a school exists.");
+                }
+                schoolId = targetSchool.id;
+            }
+
+            // Resolve Section ID if provided or by name
+            let sectionId: string | null = formData.sectionId || null;
+            if (!sectionId && formData.section) {
+                const sec = await tx.section.findFirst({
+                    where: {
+                        name: formData.section,
+                        class: { schoolId }
+                    }
+                });
+                if (sec) sectionId = sec.id;
+            }
 
             // 3. Create/Update Student User record
             const newUser = await tx.user.upsert({
@@ -121,7 +222,8 @@ export async function addStudent(formData: {
                     schoolId: schoolId,
                     role: 'student',
                     status: 'active',
-                    password: studentPasswordHash
+                    password: studentPasswordHash,
+                    mustChangePassword: true
                 },
                 create: {
                     authUserId: authUserId as string,
@@ -130,7 +232,8 @@ export async function addStudent(formData: {
                     schoolId: schoolId,
                     role: 'student',
                     status: 'active',
-                    password: studentPasswordHash
+                    password: studentPasswordHash,
+                    mustChangePassword: true
                 }
             });
 
@@ -147,17 +250,21 @@ export async function addStudent(formData: {
                         schoolId: schoolId,
                         role: 'parent',
                         status: 'active',
-                        password: parentPasswordHash
+                        password: parentPasswordHash,
+                        mustChangePassword: true
                     }
                 });
             } else if (!parentUser.password) {
                 await tx.user.update({
                     where: { id: parentUser.id },
-                    data: { password: parentPasswordHash }
+                    data: {
+                        password: parentPasswordHash,
+                        mustChangePassword: true
+                    }
                 });
             }
 
-            // 5. Create the student linked to user
+            // 5. Create the student linked to user, school, and section
             createdStudent = await tx.student.create({
                 data: {
                     registrationNo: formData.registrationNo,
@@ -169,6 +276,7 @@ export async function addStudent(formData: {
                     religion: formData.religion?.trim() || null,
                     currentClass: formData.currentClass,
                     sectionName: formData.section,
+                    sectionId: sectionId,
                     rollNo: Number(formData.rollNo),
                     session: formData.session,
                     fatherName: formData.fatherName,
@@ -230,7 +338,11 @@ export async function addStudent(formData: {
         return { success: true, data: createdStudent };
 
     } catch (error: any) {
-        console.error("❌ Student/Parent Create Database Error:", error);
+        console.error("❌ Student/Parent Create Database Error:", {
+            code: error.code,
+            message: error.message,
+            meta: error.meta
+        });
 
         // Rollback Auth Users if Prisma fails
         const rollbacks = [];
@@ -252,7 +364,14 @@ export async function addStudent(formData: {
             return { success: false, error: "A unique record with this information already exists / يوجد سجل مسجل بهذه البيانات مسبقاً" };
         }
 
-        return { success: false, error: `Unable to save student: ${error.message || "Database error occurred"} / تعذر حفظ بيانات الطالب: يرجى المحاولة مرة أخرى` };
+        if (error.code === 'P2003' || String(error.message).includes('FOREIGN KEY')) {
+            return {
+                success: false,
+                error: "Database constraint validation failed: Please verify school, class, and section relationships / تعذر حفظ بيانات الطالب: يرجى التحقق من صحة المدرسة والفصل والشعبة المختارة."
+            };
+        }
+
+        return { success: false, error: "Unable to save student. Please verify the entered information and try again / تعذر حفظ بيانات الطالب: يرجى التحقق من صحة البيانات والمحاولة مرة أخرى." };
     }
 }
 

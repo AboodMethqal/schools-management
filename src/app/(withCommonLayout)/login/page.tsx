@@ -67,7 +67,7 @@ const UnifiedLoginPage = () => {
     setIsLoading(true);
     setError('');
 
-    const { error: authError, role } = await signIn(identifier, password);
+    const { error: authError, role, mustChangePassword } = await signIn(identifier, password);
 
     if (authError) {
       setError(
@@ -75,6 +75,11 @@ const UnifiedLoginPage = () => {
           'Authentication failed. Please check your credentials.',
       );
       setIsLoading(false);
+      return;
+    }
+
+    if (mustChangePassword) {
+      window.location.href = '/login/change-password';
       return;
     }
 

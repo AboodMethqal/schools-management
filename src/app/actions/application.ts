@@ -352,6 +352,7 @@ export async function approveSchoolApplication(id: string, notes?: string) {
           status: "active",
           password: adminPassword,
           name: application.adminName,
+          mustChangePassword: true,
         },
         create: {
           authUserId: adminAuthUserId,
@@ -361,6 +362,7 @@ export async function approveSchoolApplication(id: string, notes?: string) {
           schoolId: school.id,
           status: "active",
           password: adminPassword,
+          mustChangePassword: true,
         },
       });
 

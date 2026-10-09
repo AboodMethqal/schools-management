@@ -61,6 +61,7 @@ export async function POST(request: Request) {
         name: dbUser?.name || targetAccount.name,
         role: targetAccount.role,
         schoolId: dbUser?.schoolId || targetAccount.schoolId || null,
+        mustChangePassword: !!dbUser?.mustChangePassword,
         user_metadata: {
           role: targetAccount.role,
           name: targetAccount.name,
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
         success: true,
         user: sessionUser,
         role: targetAccount.role,
+        mustChangePassword: !!sessionUser.mustChangePassword,
       });
     }
 
@@ -124,6 +126,7 @@ export async function POST(request: Request) {
             name: user.name,
             role: user.role,
             schoolId: user.schoolId,
+            mustChangePassword: !!user.mustChangePassword,
             user_metadata: { role: user.role, name: user.name },
           };
 
@@ -148,6 +151,7 @@ export async function POST(request: Request) {
             success: true,
             user: sessionUser,
             role: user.role,
+            mustChangePassword: !!sessionUser.mustChangePassword,
           });
         }
       }

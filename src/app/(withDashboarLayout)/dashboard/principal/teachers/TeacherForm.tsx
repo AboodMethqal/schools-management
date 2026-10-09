@@ -19,7 +19,8 @@ import {
     Info,
     RefreshCcw,
     Trash2,
-    Clock
+    Clock,
+    ShieldCheck
 } from "lucide-react";
 import { addTeacher, getTeacher, updateTeacher, deleteTeacher } from "@/app/actions/teacher";
 import { useLanguage } from "@/context/LanguageProvider";
@@ -45,6 +46,8 @@ export default function TeacherForm() {
         firstName: "",
         lastName: "",
         email: "",
+        password: "",
+        confirmPassword: "",
         phone: "",
         dateOfBirth: "",
         gender: "",
@@ -79,6 +82,8 @@ export default function TeacherForm() {
                             firstName: d.user?.name?.split(' ')[0] || d.firstName || '',
                             lastName: d.user?.name?.split(' ').slice(1).join(' ') || d.lastName || '',
                             email: d.user?.email || d.email || '',
+                            password: "",
+                            confirmPassword: "",
                             phone: d.phone,
                             dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth).toISOString().split('T')[0] : "",
                             gender: d.gender,
@@ -126,6 +131,19 @@ export default function TeacherForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
+
+        if (!isEdit) {
+            if (!form.password || form.password.length < 6) {
+                setError(isAr ? "يجب أن تتكون كلمة المرور المؤقتة من 6 خانات على الأقل" : "Temporary password must be at least 6 characters");
+                return;
+            }
+            if (form.password !== form.confirmPassword) {
+                setError(isAr ? "كلمتا المرور غير متطابقتين" : "Temporary passwords do not match");
+                return;
+            }
+        }
+
         setIsSubmitting(true);
         try {
             // Call the consolidated server action
@@ -252,6 +270,30 @@ export default function TeacherForm() {
                             </div>
                         )}
 
+                        {/* Login Credentials */}
+                        <div className="bg-bg-card rounded-[3rem] border border-border-light shadow-2xl p-10 lg:p-14 space-y-12">
+                            <div className="flex items-center gap-4 pb-8 border-b border-border-light/40">
+                                <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
+                                    <ShieldCheck size={24} />
+                                </div>
+                                <h3 className="text-2xl font-black text-text-primary tracking-tight">{isAr ? 'بيانات تسجيل الدخول' : 'Login Credentials'}</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{isAr ? 'البريد الإلكتروني الرسمي *' : 'Official Email *'}</label>
+                                    <Input name="email" type="email" value={form.email} onChange={handleChange} required className="h-16 rounded-2xl bg-bg-page/40 font-bold lowercase" placeholder="faculty@school.com" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{isAr ? 'كلمة المرور المؤقتة *' : 'Temporary Password *'}</label>
+                                    <Input name="password" type="password" value={form.password} onChange={handleChange} required={!isEdit} className="h-16 rounded-2xl bg-bg-page/40 font-bold" placeholder={isEdit ? "••••••••" : (isAr ? "6+ خانات" : "6+ characters")} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{isAr ? 'تأكيد كلمة المرور *' : 'Confirm Password *'}</label>
+                                    <Input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required={!isEdit} className="h-16 rounded-2xl bg-bg-page/40 font-bold" placeholder={isEdit ? "••••••••" : (isAr ? "تأكيد كلمة المرور" : "Confirm Password")} />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="bg-bg-card rounded-[3rem] border border-border-light shadow-2xl p-10 lg:p-14 space-y-12">
                             <div className="flex items-center gap-4 pb-8 border-b border-border-light/40">
                                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
@@ -355,12 +397,12 @@ export default function TeacherForm() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Official Email *</label>
-                                    <Input name="email" type="email" value={form.email} onChange={handleChange} required className="h-16 rounded-2xl bg-bg-page/40 font-bold lowercase" />
+                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{isAr ? 'رقم الهاتف المحمول *' : 'Mobile Number *'}</label>
+                                    <Input name="phone" value={form.phone} onChange={handleChange} required className="h-16 rounded-2xl bg-bg-page/40 font-black text-xl tracking-tight" placeholder="+1234567890" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Mobile Number *</label>
-                                    <Input name="phone" value={form.phone} onChange={handleChange} required className="h-16 rounded-2xl bg-bg-page/40 font-black text-2xl tracking-tighter" />
+                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{isAr ? 'الديانة' : 'Religion'}</label>
+                                    <Input name="religion" value={form.religion} onChange={handleChange} className="h-16 rounded-2xl bg-bg-page/40 font-bold" />
                                 </div>
                             </div>
 
