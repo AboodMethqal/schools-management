@@ -71,17 +71,24 @@ A comprehensive, multi-tenant school management system built for scalable instit
 
 ---
 
-## ملاحظة هامة حول النشر على Vercel وقاعدة البيانات (Deployment & Persistence)
+## بيئة التشغيل وقواعد البيانات (Database & Deployment Architecture)
 
-- **محلياً (Local Demo):** يستخدم التطبيق محرك SQLite (`file:./dev.db`) مع حفظ دائم على القرص الصلب.
-- **سحابياً على Vercel:** تعمل دوال Serverless Functions في بيئة مؤقتة (Ephemeral Storage)، وبالتالي فإن أي تعديل يُكتب على ملف SQLite محلي في Vercel لا يستمر بين استدعاء وآخر أو بعد إعادة النشر.
-- **للإنتاج السحابي الحقيقي:** يجب تزويد `DATABASE_URL` بقاعدة بيانات سحابية دائمة ومشتركة مثل:
-  - **Turso LibSQL** (`libsql://...`) باستخدام `@prisma/adapter-libsql`.
-  - أو **PostgreSQL / Supabase** باستخدام `@prisma/adapter-pg`.
+- **محلياً (Local Development):**
+  - يستخدم التطبيق محرك SQLite (`file:./dev.db`) تلقائياً عند غياب متغيرات Turso.
+  - يعمل محلياً بكفاءة وسرعة دون الحاجة لأي اتصال خارجي.
+  - لا يتأثر بأي تعديلات في السحابة.
+
+- **سحابياً على Vercel مع Turso Cloud (Production Integration):**
+  - قاعدة البيانات السحابية: **Turso libSQL (`database-cordovan-kettle`)**.
+  - التكامل: Vercel Storage integration يربط تلقائياً `TURSO_DATABASE_URL` و `TURSO_AUTH_TOKEN`.
+  - المحول والسائق: `@prisma/adapter-libsql` v7.10.0 مع `@libsql/client` v0.18.0.
+  - المزامنة الآلية: يتم تطبيق الترحيلات ومخطط الجداول (32 جدولاً وفهرساً) تلقائياً أثناء خطوة الـ build عبر `scripts/migrate-turso.ts` بالإضافة إلى الفحص الذاتي أثناء التشغيل (`ensureDb`).
+  - الاستمرارية (Persistence): كافة العمليات والبيانات مسجلة ومحفوظة بشكل دائم على السحابة، متوافقة تماماً مع معمارية Serverless بدون أي فقدان للبيانات.
 
 ---
 
 ## حقوق وهوية المنتج
 - اسم المنتج: **مثقال تك — Methqal Tech**
 - المصدر والرخص: راجع `SOURCE_NOTICE.md`.
+
 

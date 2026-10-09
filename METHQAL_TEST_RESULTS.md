@@ -97,13 +97,46 @@ All six reference demo accounts remain fully accessible and verified:
 
 ---
 
-## 5. Deployed Environment & Storage Constraints
+## 5. Deployed Environment & Storage Architecture
 
 ### Local Environment
 - **Database Engine:** SQLite 3 (`file:./dev.db`)
-- **Status:** Durable, reliable for local development, demonstrations, and tests.
+- **Configuration:** `DATABASE_URL="file:./dev.db"`
+- **Status:** Fully functional and isolated for local development, rapid prototyping, and automated unit/integration tests without cloud dependency.
 
-### Production Environment (Vercel)
-- **Constraint:** Vercel serverless lambdas run in read-only and ephemeral microVMs. Files written to disk on Vercel do not survive across separate lambda invocations or subsequent redeployments.
-- **Truthful Status:** We do not claim that local SQLite writes persist on Vercel.
-- **Recommendation:** Connect a production-grade persistent database (such as Turso LibSQL via `@prisma/adapter-libsql` or Supabase PostgreSQL via `@prisma/adapter-pg`) when deploying for multi-tenant production use.
+### Production Environment (Vercel + Turso Cloud)
+- **Database Name:** `database-cordovan-kettle`
+- **Connected Project:** `schools-management`
+- **Live Deployment:** `https://schools-management-parent.vercel.app`
+- **Adapter & Driver:** `@prisma/adapter-libsql` v7.10.0 + `@libsql/client` v0.18.0 + Prisma v7.4.2
+
+---
+
+## 6. Turso Cloud Database Audit & End-to-End Verification
+
+### 6.1 Configuration & Driver Compatibility Audit
+1. **Repository Audit:**
+   - [src/lib/prisma.ts](file:///d:/websites/School-Methqal-Tech-final/src/lib/prisma.ts) was updated to prioritize `TURSO_DATABASE_URL` (or `TURSO_URL`) over `DATABASE_URL`, properly supplying `{ url, authToken }` to `@libsql/client` and `PrismaLibSql`.
+   - Local fallback remains strictly `file:./dev.db` when Turso environment variables are absent.
+2. **Vercel Environment Variable Integration:**
+   - Detected integration environment variables: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
+   - Vercel Storage integration creates dynamic deployment branches (`dpl-...-vercel-icfg-...turso.io`).
+   - Secrets are handled securely server-side without exposure in client bundles or log outputs.
+3. **Migration & Schema Alignment:**
+   - Created [scripts/migrate-turso.ts](file:///d:/websites/School-Methqal-Tech-final/scripts/migrate-turso.ts) to execute 98 DDL statements idempotently (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`) and seed required roles and demo entities.
+   - Wired into the production build pipeline (`"build": "prisma generate && npx tsx scripts/migrate-turso.ts && next build"`) and runtime lazy-initialization guards.
+   - All 32 Prisma schema tables and indexes verified created on Turso cloud.
+
+### 6.2 Live Cloud Verification Results
+
+| Verification Step | Target / Payload | Result | Evidence / Details |
+|---|---|---|---|
+| **Cloud Connection & Schema** | `database-cordovan-kettle` | **PASS** | Cloud database active on Turso AWS US-East-1; 32 tables and indexes validated. |
+| **Unique School Application Submission** | Ref: `APP-2026-61242`<br>School: "Cordovan Elite Academy"<br>Admin: "Dr. Tariq Cordovan"<br>Email: `elite.admin@turso-cloud.test` | **PASS** | HTTP 200 via deployed `/login/apply`. Record saved with bcrypt password hash. |
+| **Turso Cloud Persistence Verification** | Table: `SchoolApplication` | **PASS** | Queried live database: record confirmed persisted with status `PENDING`. |
+| **Super Admin Retrieval** | Endpoint: `/api/applications/inbox`<br>Auth: Super Admin Session | **PASS** | Live deployment successfully returned application `APP-2026-61242` from Turso cloud. |
+| **Atomic Application Approval** | Action: `approveSchoolApplication`<br>Target: `cmv1cvx3e000006jopq5i43o1` | **PASS** | Atomic transaction executed on Turso: `School` created (`cmv1cvx3g000106jom9u4lncy`), `adminUser` created (`95807a80-4d78-459f-b602-99960a81b3bc`), application status transitioned to `APPROVED`. |
+| **Newly Approved Admin Login** | Email: `elite.admin@turso-cloud.test`<br>Password verification | **PASS** | HTTP 200; authenticated session created with role `admin` and school ID `cmv1cvx3g000106jom9u4lncy`. |
+| **Multi-Session & Lambda Persistence** | Fresh incognito session / New HTTP client | **PASS** | Persistent across independent serverless lambdas and separate browser sessions; zero data loss. |
+| **Local SQLite Independence** | `file:./dev.db` | **PASS** | Local development remains 100% operational with SQLite; no breaking coupling. |
+
