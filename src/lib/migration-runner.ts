@@ -555,11 +555,22 @@ export async function applyDatabaseMigrations() {
             executedCount++;
         } catch (err: unknown) {
             const msg = (err as Error).message || String(err);
-            // Ignore if already exists
-            if (!msg.includes('already exists')) {
+            if (!msg.includes('already exists') && !msg.includes('duplicate column')) {
                 errors.push(msg);
             }
         }
+    }
+
+    // Ensure User table has profileImage and password columns
+    try {
+        await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "profileImage" TEXT');
+    } catch {
+        // column may already exist
+    }
+    try {
+        await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "password" TEXT');
+    } catch {
+        // column may already exist
     }
 
     // 2. Fetch created tables
@@ -568,7 +579,7 @@ export async function applyDatabaseMigrations() {
     );
     const tableNames = tables.map(t => t.name);
 
-    // 3. Seed demo school and users if School table is empty
+    // 3. Seed demo school and users if tables are empty
     let demoSeeded = false;
     try {
         const schoolCount = await prisma.school.count();
@@ -589,7 +600,10 @@ export async function applyDatabaseMigrations() {
                     language: 'arabic',
                 },
             });
+        }
 
+        const userCount = await prisma.user.count();
+        if (userCount === 0) {
             const defaultPasswordHash = await bcrypt.hash('Password123!', 10);
 
             for (const acc of Object.values(DEMO_ACCOUNTS)) {
