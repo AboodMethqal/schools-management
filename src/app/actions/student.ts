@@ -3,6 +3,19 @@
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/getCurrentUser"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import bcrypt from "bcryptjs"
+import { applyDatabaseMigrations } from "@/lib/migration-runner"
+
+let isDbReady = false;
+async function ensureDb() {
+    if (isDbReady) return;
+    try {
+        await applyDatabaseMigrations();
+        isDbReady = true;
+    } catch (err) {
+        console.warn("ensureDb non-fatal error in student actions:", err);
+    }
+}
 
 export async function addStudent(formData: {
     registrationNo: string
@@ -28,12 +41,13 @@ export async function addStudent(formData: {
     parentPassword?: string
 }) {
     console.log("📥 Receiving student request:", formData.registrationNo);
+    await ensureDb();
 
     const currentUser = await getCurrentUser()
     console.log("🛠️ [addStudent] Current User status:", !!currentUser, "Role:", currentUser?.role)
 
     if (!currentUser || (currentUser.role as string) !== 'admin') {
-        return { success: false, error: "Unauthorized: Principal access required." }
+        return { success: false, error: "Unauthorized: Principal access required / غير مصرح: يتطلب صلاحية مدير المدرسة." }
     }
 
     let authUserId: string | null = null;
@@ -55,6 +69,9 @@ export async function addStudent(formData: {
         const sanitizedReg = formData.registrationNo.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
         const safeEmail = formData.email?.trim() || `st.${sanitizedReg}@school.site`;
         const parentSafeEmail = formData.parentEmail?.trim() || `pa.${sanitizedReg}@school.site`;
+
+        const studentPasswordHash = await bcrypt.hash(formData.password?.trim() || "Student@1234", 10);
+        const parentPasswordHash = await bcrypt.hash(formData.parentPassword?.trim() || "Parent@1234", 10);
 
         // 1. Attempt Supabase Auth accounts if admin key is present
         if (process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.includes("dummy")) {
@@ -98,13 +115,13 @@ export async function addStudent(formData: {
 
             // 3. Create/Update Student User record
             const newUser = await tx.user.upsert({
-                where: { authUserId: authUserId as string },
+                where: { email: safeEmail },
                 update: {
                     name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || 'Unknown Student',
-                    email: safeEmail,
                     schoolId: schoolId,
                     role: 'student',
-                    status: 'active'
+                    status: 'active',
+                    password: studentPasswordHash
                 },
                 create: {
                     authUserId: authUserId as string,
@@ -112,29 +129,33 @@ export async function addStudent(formData: {
                     email: safeEmail,
                     schoolId: schoolId,
                     role: 'student',
-                    status: 'active'
+                    status: 'active',
+                    password: studentPasswordHash
                 }
             });
 
-            // 4. Create Parent User record
-            const newParentUser = await tx.user.upsert({
-                where: { authUserId: parentAuthUserId as string },
-                update: {
-                    name: `${formData.fatherName || 'Parent'}`.trim(),
-                    email: parentSafeEmail,
-                    schoolId: schoolId,
-                    role: 'parent',
-                    status: 'active'
-                },
-                create: {
-                    authUserId: parentAuthUserId as string,
-                    name: `${formData.fatherName || 'Parent'}`.trim(),
-                    email: parentSafeEmail,
-                    schoolId: schoolId,
-                    role: 'parent',
-                    status: 'active'
-                }
+            // 4. Create or reuse Parent User record
+            let parentUser = await tx.user.findUnique({
+                where: { email: parentSafeEmail }
             });
+            if (!parentUser) {
+                parentUser = await tx.user.create({
+                    data: {
+                        authUserId: parentAuthUserId as string,
+                        name: `${formData.fatherName || 'Parent'}`.trim(),
+                        email: parentSafeEmail,
+                        schoolId: schoolId,
+                        role: 'parent',
+                        status: 'active',
+                        password: parentPasswordHash
+                    }
+                });
+            } else if (!parentUser.password) {
+                await tx.user.update({
+                    where: { id: parentUser.id },
+                    data: { password: parentPasswordHash }
+                });
+            }
 
             // 5. Create the student linked to user
             createdStudent = await tx.student.create({
@@ -162,14 +183,45 @@ export async function addStudent(formData: {
                 },
             });
 
-            // 6. Create the Parent record linked to User and Student
-            await tx.parent.create({
-                data: {
-                    name: formData.fatherName,
-                    phone: formData.guardianPhone,
-                    email: parentSafeEmail,
-                    studentId: createdStudent.id,
-                    userId: newParentUser.id
+            // 6. Find or create the Parent record
+            let parentRecord = await tx.parent.findFirst({
+                where: {
+                    OR: [
+                        { userId: parentUser.id },
+                        { email: parentSafeEmail }
+                    ]
+                }
+            });
+
+            if (!parentRecord) {
+                parentRecord = await tx.parent.create({
+                    data: {
+                        name: formData.fatherName || 'Parent',
+                        phone: formData.guardianPhone || null,
+                        email: parentSafeEmail,
+                        studentId: createdStudent.id,
+                        userId: parentUser.id
+                    }
+                });
+            } else if (!parentRecord.studentId) {
+                await tx.parent.update({
+                    where: { id: parentRecord.id },
+                    data: { studentId: createdStudent.id }
+                });
+            }
+
+            // 7. Join table ParentStudent for reliable multi-child relationship
+            await tx.parentStudent.upsert({
+                where: {
+                    parentId_studentId: {
+                        parentId: parentRecord.id,
+                        studentId: createdStudent.id
+                    }
+                },
+                update: {},
+                create: {
+                    parentId: parentRecord.id,
+                    studentId: createdStudent.id
                 }
             });
         });
@@ -192,15 +244,15 @@ export async function addStudent(formData: {
         if (error.code === 'P2002') {
             const fields = error.meta?.target || [];
             if (fields.includes('registrationNo')) {
-                return { success: false, error: "এই Registration No টি আগেই ব্যবহার করা হয়েছে!" };
+                return { success: false, error: "This Registration Number is already registered / رقم القيد هذا مسجل مسبقاً" };
             }
             if (fields.includes('email')) {
-                return { success: false, error: "এই Email টি আগেই ব্যবহার করা হয়েছে!" };
+                return { success: false, error: "This Email is already registered / هذا البريد الإلكتروني مسجل بالفعل" };
             }
-            return { success: false, error: "এই তথ্যটি আগে থেকেই ডাটাবেসে আছে!" };
+            return { success: false, error: "A unique record with this information already exists / يوجد سجل مسجل بهذه البيانات مسبقاً" };
         }
 
-        return { success: false, error: `সার্ভার এরর: ${error.message || "Database error occurred"}` }
+        return { success: false, error: `Unable to save student: ${error.message || "Database error occurred"} / تعذر حفظ بيانات الطالب: يرجى المحاولة مرة أخرى` };
     }
 }
 
@@ -221,8 +273,8 @@ export async function getStudents() {
         })
         return { success: true, data: students }
     } catch (error: any) {
-        console.error("âŒ Get Students Error:", error.message)
-        return { success: false, error: "à¦›à¦¾à¦¤à§à¦°-à¦›à¦¾à¦¤à§à¦°à§€à¦¦à§‡à¦° à¦¤à¦¥à§à¦¯ à¦²à§‹à¦¡ à¦•à¦°à¦¤à§‡ à¦¸à¦®à¦¸à§à¦¯à¦¾ à¦¹à¦¯à¦¼à§‡à¦›à§‡à¥¤" }
+        console.error("❌ Get Students Error:", error.message);
+        return { success: false, error: "Failed to load students / تعذر تحميل بيانات الطلاب" }
     }
 }
 
@@ -278,7 +330,7 @@ export async function updateStudent(id: string, formData: any) {
         return { success: true, data: updated };
     } catch (error: any) {
         console.error("❌ Update Student Error:", error.message);
-        return { success: false, error: "তথ্য আপডেট করতে সমস্যা হয়েছে।" };
+        return { success: false, error: "Failed to update student / تعذر تحديث بيانات الطالب" };
     }
 }
 
@@ -320,7 +372,7 @@ export async function deleteStudent(id: string) {
         return { success: true };
     } catch (error: any) {
         console.error("❌ Delete Student Error:", error.message);
-        return { success: false, error: "মুছে ফেলতে সমস্যা হয়েছে।" };
+        return { success: false, error: "Failed to delete student / تعذر حذف بيانات الطالب" };
     }
 }
 
@@ -480,6 +532,6 @@ export async function addMultipleStudents(studentsData: any[]) {
         if (error.code === 'P2002') {
             return { success: false, error: "A unique constraint failed during import (Duplicate Email or Registration No)." };
         }
-        return { success: false, error: `সার্ভার এরর: ${error.message || "Database error occurred"}` };
+        return { success: false, error: `Failed to import students: ${error.message || "Database error"} / فشل استيراد الطلاب` };
     }
 }

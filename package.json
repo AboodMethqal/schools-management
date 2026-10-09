@@ -13,7 +13,8 @@
     "db:reset": "prisma migrate reset --force && prisma db seed",
     "seed": "npx tsx prisma/seed.ts",
     "check:translations": "npx tsx scripts/check-translations.ts",
-    "test:workflows": "npx tsx scripts/test-workflows.ts"
+    "test:workflows": "npx tsx scripts/test-workflows.ts",
+    "verify:schema": "npx tsx scripts/verify-turso-schema.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
