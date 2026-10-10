@@ -123,7 +123,7 @@ export default function NewAnnouncement() {
                     <option value="class-1">{isAr ? 'الصف الأول' : 'Class 1'}</option>
                     <option value="class-2">{isAr ? 'الصف الثاني' : 'Class 2'}</option>
                     <option value="class-10">{isAr ? 'الصف العاشر' : 'Class 10'}</option>
-                    {/* আপনি এখানে আপনার স্কুলের ক্লাসগুলো ম্যাপ করে দিতে পারেন */}
+                    {/* Dynamic classes mapped per school */}
                   </select>
                 </div>
               </div>

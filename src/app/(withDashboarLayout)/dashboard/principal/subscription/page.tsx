@@ -18,7 +18,8 @@ const iconMap: Record<string, React.ElementType> = {
 
 export default function SubscriptionPage() {
   const { t, language } = useLanguage();
-  const currency = language === 'ar' ? 'ر.ي ' : '$';
+  const isAr = language === 'ar';
+  const currency = isAr ? 'ر.ي ' : '$';
   const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -51,7 +52,7 @@ export default function SubscriptionPage() {
   }, []);
 
   const showSubscriptionDetails = async (shouldCloseBanner = false) => {
-    // ডাটা রিফ্রেশ করা যাতে লেটেস্ট তথ্য পাওয়া যায়
+    // Refresh school data
     const schoolRes = await getMySchool();
     const currentSchool = schoolRes.success ? schoolRes.data : mySchool;
 
@@ -60,47 +61,47 @@ export default function SubscriptionPage() {
     }
 
     const { plan = 'Premium', duration = '12', subscriptions = [] } = currentSchool || {};
-    const sub = subscriptions[0]; // লেটেস্ট সাবস্ক্রিপশন
+    const sub = subscriptions[0]; // Latest subscription
 
     await Swal.fire({
-      title: 'Payment Receipt 🎉',
+      title: isAr ? 'إيصال الدفع 🎉' : 'Payment Receipt 🎉',
       html: `
         <div style="text-align: center; padding: 10px;">
           <div style="margin-bottom: 20px; color: #059669; background: #ecfdf5; padding: 25px; border-radius: 24px; border: 1px solid #d1fae5;">
-            <p style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; color: #065f46;">Your Current Plan</p>
+            <p style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; color: #065f46;">${isAr ? 'باقتك الحالية' : 'Your Current Plan'}</p>
             <p style="font-size: 32px; font-weight: 900; margin: 0; color: #064e3b; text-transform: capitalize;">${plan}</p>
           </div>
           
-          <div style="padding: 20px; background: #f9fafb; border-radius: 24px; text-align: left; border: 1px solid #f3f4f6;">
-            <p style="font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em;">Transaction Information:</p>
+          <div style="padding: 20px; background: #f9fafb; border-radius: 24px; text-align: ${isAr ? 'right' : 'left'}; border: 1px solid #f3f4f6;">
+            <p style="font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em;">${isAr ? 'معلومات المعاملة:' : 'Transaction Information:'}</p>
             
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div style="display: flex; justify-content: space-between; font-size: 14px; padding-bottom: 8px; border-bottom: 1px dashed #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 600;">Transaction ID:</span>
+                <span style="color: #6b7280; font-weight: 600;">${isAr ? 'رقم العملية:' : 'Transaction ID:'}</span>
                 <span style="color: #111827; font-weight: 800; font-family: 'JetBrains Mono', monospace;">${sub?.transactionId || '---'}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 14px; padding-bottom: 8px; border-bottom: 1px dashed #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 600;">Amount Authorized:</span>
+                <span style="color: #6b7280; font-weight: 600;">${isAr ? 'المبلغ المعتمد:' : 'Amount Authorized:'}</span>
                 <span style="color: #111827; font-weight: 800;">${currency}${sub?.amount || '0.00'}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 14px; padding-bottom: 8px; border-bottom: 1px dashed #e5e7eb;">
-                <span style="color: #6b7280; font-weight: 600;">Validity Period:</span>
-                <span style="color: #111827; font-weight: 800;">${duration} Months</span>
+                <span style="color: #6b7280; font-weight: 600;">${isAr ? 'فترة الصلاحية:' : 'Validity Period:'}</span>
+                <span style="color: #111827; font-weight: 800;">${duration} ${isAr ? 'أشهر' : 'Months'}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                <span style="color: #6b7280; font-weight: 600;">Activation Date:</span>
-                <span style="color: #111827; font-weight: 800;">${sub?.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Verified'}</span>
+                <span style="color: #6b7280; font-weight: 600;">${isAr ? 'تاريخ التفعيل:' : 'Activation Date:'}</span>
+                <span style="color: #111827; font-weight: 800;">${sub?.createdAt ? new Date(sub.createdAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : (isAr ? 'مؤكد' : 'Verified')}</span>
               </div>
             </div>
           </div>
           
           <div style="margin-top: 20px; padding: 0 10px;">
-             <p style="font-size: 12px; color: #6b7280; font-weight: 500; line-height: 1.6;">আপনার পেমেন্ট রেকর্ড নিরাপদে ডাটাবেজে সংরক্ষিত আছে। আপনার সাবস্ক্রিপশনটি অটোমেটিক আপডেট করা হয়েছে। ধন্যবাদ আমাদের সাথে থাকার জন্য।</p>
+             <p style="font-size: 12px; color: #6b7280; font-weight: 500; line-height: 1.6;">${isAr ? 'سجل الدفع الخاص بك محفوظ بأمان في قاعدة البيانات. تم تحديث اشتراكك بنجاح. شكراً لثقتكم بنا.' : 'Your payment record is securely stored. Your subscription has been updated automatically. Thank you for your trust.'}</p>
           </div>
         </div>
       `,
       icon: 'success',
-      confirmButtonText: 'Got it!',
+      confirmButtonText: isAr ? 'حسناً' : 'Got it!',
       confirmButtonColor: '#10b981',
       showCloseButton: true,
       customClass: {
@@ -122,14 +123,15 @@ export default function SubscriptionPage() {
       if (!user) {
         Swal.fire({
           icon: 'warning',
-          title: 'নিবন্ধন প্রয়োজন',
-          text: 'পেমেন্ট শুরু করতে অনুগ্রহ করে লগ-ইন করুন।',
-          confirmButtonColor: '#2563eb'
+          title: isAr ? 'تسجيل الدخول مطلوب' : 'Login Required',
+          text: isAr ? 'يرجى تسجيل الدخول للبدء في ترقية الاشتراك.' : 'Please log in to initiate subscription payment.',
+          confirmButtonColor: '#2563eb',
+          confirmButtonText: isAr ? 'حسناً' : 'OK'
         });
         return;
       }
 
-      // আগে থেকে সাবস্ক্রিপশন আছে কিনা চেক করা
+      // Check existing subscription
       const currentPlan = mySchool?.plan?.toLowerCase();
       const requestedPlan = plan.name.toLowerCase();
 
@@ -137,23 +139,26 @@ export default function SubscriptionPage() {
         if (currentPlan === requestedPlan) {
           Swal.fire({
             icon: 'info',
-            title: 'ইতিমধ্যে সচল',
-            text: 'আপনার বর্তমানে এই সাবস্ক্রিপশনটি চালু আছে।',
-            confirmButtonColor: '#2563eb'
+            title: isAr ? 'الخطة مفعلة بالفعل' : 'Already Active',
+            text: isAr ? 'هذه الباقة مفعلة حالياً في مدرستكم.' : 'Your school is currently subscribed to this plan.',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: isAr ? 'حسناً' : 'OK'
           });
           return;
         }
 
         const currentPlanName = mySchool?.plan || 'Free';
         const result = await Swal.fire({
-          title: 'প্ল্যান পরিবর্তন?',
-          text: `আপনার বর্তমানে "${currentPlanName}" প্ল্যানটি সচল আছে। আপনি কি এটি পরিবর্তন করে "${plan.name}" নিতে চান?`,
+          title: isAr ? 'تغيير الخطة؟' : 'Change Plan?',
+          text: isAr
+            ? `باقتكم الحالية هي "${currentPlanName}". هل ترغب في الترقية أو التغيير إلى "${plan.name}"؟`
+            : `Your current plan is "${currentPlanName}". Do you want to change to "${plan.name}"?`,
           icon: 'question',
           showCancelButton: true,
           confirmButtonColor: '#2563eb',
           cancelButtonColor: '#64748b',
-          confirmButtonText: 'হ্যাঁ, পরিবর্তন করুন',
-          cancelButtonText: 'না'
+          confirmButtonText: isAr ? 'نعم، تغيير الخطة' : 'Yes, Change Plan',
+          cancelButtonText: isAr ? 'إلغاء' : 'Cancel'
         });
 
         if (!result.isConfirmed) return;

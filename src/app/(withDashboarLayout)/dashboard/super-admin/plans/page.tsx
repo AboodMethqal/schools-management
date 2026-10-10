@@ -152,7 +152,7 @@ const handleDeletePlan = async (id: string) => {
                     </div>
                   </div>
 
-                  {/* এডিট এবং ডিলিট আইকন বাটন */}
+                  {/* Edit and Delete Actions */}
                   <div className="flex gap-2">
                     <Link
                       href={`/dashboard/super-admin/plans/${plan.id}/edit`}

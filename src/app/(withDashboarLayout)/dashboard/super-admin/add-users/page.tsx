@@ -36,7 +36,7 @@ export default function SuperAdminProfileControl() {
     init()
   }, [])
 
-  // ১. ডিলিট ফাংশন
+  // 1. Delete user function
   const handleDeleteUser = async (user: any) => {
     const confirm = await Swal.fire({
       title: isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
@@ -66,10 +66,25 @@ export default function SuperAdminProfileControl() {
     const form = e.currentTarget;
     setIsCreatingUser(true)
     const formData = new FormData(form)
+    const password = (formData.get('password') as string) || "Super@Admin123";
+    const confirmPassword = (formData.get('confirmPassword') as string) || password;
+
+    if (password !== confirmPassword) {
+      Swal.fire(isAr ? 'خطأ!' : 'Error!', isAr ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match', 'error');
+      setIsCreatingUser(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      Swal.fire(isAr ? 'خطأ!' : 'Error!', isAr ? 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل' : 'Password must be at least 8 characters', 'error');
+      setIsCreatingUser(false);
+      return;
+    }
+
     const userData = {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
-      password: (formData.get('password') as string) || "Super@Admin123"
+      password: password
     }
 
     try {
@@ -161,7 +176,8 @@ export default function SuperAdminProfileControl() {
                   <form onSubmit={handleAddUserSubmit} className="space-y-6">
                       <input name="name" required placeholder={isAr ? "الاسم الكامل" : "Full Name"} className="w-full px-8 py-5 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-3xl font-black outline-none focus:border-blue-500 transition-all" />
                       <input name="email" required type="email" placeholder={isAr ? "البريد الإلكتروني" : "Email Address"} className="w-full px-8 py-5 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-3xl font-black outline-none focus:border-blue-500 transition-all" />
-                      <input name="password" type="password" placeholder={isAr ? "كلمة المرور" : "Password"} className="w-full px-8 py-5 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-3xl font-black outline-none focus:border-blue-500 transition-all" />
+                      <input name="password" type="password" required placeholder={isAr ? "كلمة المرور المؤقتة" : "Temporary Password"} className="w-full px-8 py-5 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-3xl font-black outline-none focus:border-blue-500 transition-all" />
+                      <input name="confirmPassword" type="password" required placeholder={isAr ? "تأكيد كلمة المرور" : "Confirm Password"} className="w-full px-8 py-5 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-3xl font-black outline-none focus:border-blue-500 transition-all" />
                       <button disabled={isCreatingUser} type="submit" className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest shadow-2xl">
                         {isCreatingUser ? <Loader2 className="animate-spin mx-auto" size={24}/> : (isAr ? "منح صلاحيات النظام" : "Grant System Access")}
                       </button>

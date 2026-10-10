@@ -37,7 +37,7 @@ export default function SupportDashboard() {
   } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // টিকেট লোড করার ফাংশন
+  // Load tickets function
   const loadTickets = async () => {
     setLoading(true);
     const result = await getAllSupportTickets();
@@ -49,7 +49,7 @@ if (result.success) setTickets(result.data ?? []);
     loadTickets();
   }, []);
 
-  // ইমেজ সিলেক্ট এবং প্রিভিউ হ্যান্ডলার
+  // Image select and preview handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -116,7 +116,7 @@ const handleDelete = async (id: string) => {
 };
 
 
-  // ফর্ম সাবমিট হ্যান্ডলার
+  // Form submit handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormLoading(true);
@@ -129,7 +129,7 @@ const handleDelete = async (id: string) => {
       description: formData.get('description') as string,
       priority: formData.get('priority') as string,
       userEmail: 'principal@test.com',
-      image: imagePreview, // এটি এখন Base64 হিসেবে সার্ভারে যাবে এবং ImgBB-তে আপলোড হবে
+      image: imagePreview, // Base64 payload uploaded to ImgBB
     };
 
     const result = await createSupportTicket(data);
@@ -161,8 +161,7 @@ const handleDelete = async (id: string) => {
               {isAr ? 'مركز ' : 'Support '}<span className="text-primary">{isAr ? 'الدعم الفني' : 'Center'}</span>
             </h2>
             <p className="text-[var(--color-text-muted)] mt-2 font-medium max-w-md">
-              আমাদের টিম আপনার সমস্যার সমাধানে প্রস্তুত। নিচে নতুন টিকেট তৈরি
-              করুন।
+              {isAr ? 'فريق الدعم الفني جاهز لمساعدتكم في أي وقت. أنشئ تذكرة جديدة أدناه.' : 'Our team is ready to assist you. Create a new support ticket below.'}
             </p>
           </div>
           <button

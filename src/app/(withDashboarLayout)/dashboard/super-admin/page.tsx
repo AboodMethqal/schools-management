@@ -115,7 +115,7 @@ export default function SuperAdminOverview() {
   return (
     <div className="space-y-8 animate-fade-in-up">
 
-      {/* ۱. हेডার সেকশন */}
+      {/* 1. Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
@@ -136,7 +136,7 @@ export default function SuperAdminOverview() {
       </div>
 
 
-      {/* ২. কি-ম্যাট্রিক্স (Stats Grid) */}
+      {/* 2. Key Metrics (Stats Grid) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {stats.map((stat, index) => (
           <div key={index} className="bg-[var(--color-bg-card)] p-6 rounded-2xl border border-[var(--color-border-light)] shadow-sm hover:shadow-md transition-all">
@@ -156,10 +156,10 @@ export default function SuperAdminOverview() {
         ))}
       </div>
 
-      {/* ৩. গ্রাফ সেকশন */}
+      {/* 3. Graph Section */}
       <div className="grid  grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* রেভিনিউ চার্ট */}
+        {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-[var(--color-bg-card)] p-6 rounded-2xl border border-[var(--color-border-light)] shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-black text-[var(--color-text-primary)] flex items-center gap-2">
@@ -193,7 +193,7 @@ export default function SuperAdminOverview() {
           </div>
         </div>
 
-        {/* সাবস্ক্রিপশন ডিস্ট্রিবিউশন */}
+        {/* Plan Distribution */}
         <div className="bg-[var(--color-bg-card)] p-6 rounded-2xl  border-[var(--color-border-light)] shadow-sm">
           <h3 className="font-black text-[var(--color-text-primary)] mb-6">
             {isAr ? "توزيع خطط الاشتراك" : "Plan Distribution"}
@@ -227,19 +227,19 @@ export default function SuperAdminOverview() {
         </div>
       </div>
 
-      {/* ৪. নিচের সেকশন - রিসেন্ট অ্যাকশন ও মেয়াদ শেষ হওয়া স্কুল */}
+      {/* 4. Lower Section - Quick Actions & Expiring Subscriptions */}
       <div className="grid  grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-light)] overflow-hidden">
           <div className="p-6 border-b border-[var(--color-border-light)]">
-            <h3 className="font-black text-[var(--color-text-primary)]">Expiring Subscriptions</h3>
+            <h3 className="font-black text-[var(--color-text-primary)]">{isAr ? "الاشتراكات المنتهية قريباً" : "Expiring Subscriptions"}</h3>
           </div>
           <table className="w-full text-start">
             <thead className="bg-[var(--color-bg-page)]">
               <tr className="text-[var(--color-text-muted)] text-[10px] uppercase font-black">
-                <th className="px-6 py-4">School Name</th>
-                <th className="px-6 py-4">Expiry Date</th>
-                <th className="px-6 py-4">Plan</th>
-                <th className="px-6 py-4">Action</th>
+                <th className="px-6 py-4">{isAr ? "اسم المدرسة" : "School Name"}</th>
+                <th className="px-6 py-4">{isAr ? "تاريخ الانتهاء" : "Expiry Date"}</th>
+                <th className="px-6 py-4">{isAr ? "الخطة" : "Plan"}</th>
+                <th className="px-6 py-4">{isAr ? "الإجراء" : "Action"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border-light)]">
@@ -248,18 +248,18 @@ export default function SuperAdminOverview() {
                   <tr key={index} className="hover:bg-[var(--color-bg-page)] transition-colors">
                     <td className="px-6 py-4 font-bold text-sm text-[var(--color-text-primary)]">{item.schoolName}</td>
                     <td className="px-6 py-4 text-xs text-red-500 font-bold">
-                      {new Date(item.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(item.expiryDate).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-[var(--color-text-secondary)]">{item.plan}</td>
                     <td className="px-6 py-4">
-                      <button className="text-[var(--color-primary)] font-black text-[10px] uppercase hover:underline">Send Reminder</button>
+                      <button className="text-[var(--color-primary)] font-black text-[10px] uppercase hover:underline">{isAr ? "إرسال تذكير" : "Send Reminder"}</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-xs text-[var(--color-text-muted)] font-medium">
-                    No subscriptions expiring in the next 7 days.
+                    {isAr ? "لا توجد اشتراكات ستنتهي خلال الأيام السبعة القادمة." : "No subscriptions expiring in the next 7 days."}
                   </td>
                 </tr>
               )}
@@ -268,35 +268,35 @@ export default function SuperAdminOverview() {
         </div>
 
         <div className="bg-[var(--color-bg-card)] p-6 rounded-2xl border border-[var(--color-border-light)]">
-          <h3 className="font-black text-[var(--color-text-primary)] mb-6">Master Quick Actions</h3>
+          <h3 className="font-black text-[var(--color-text-primary)] mb-6">{isAr ? "الإجراءات السريعة الرئيسية" : "Master Quick Actions"}</h3>
           <div className="grid grid-cols-2 gap-4">
             <Link 
               href="/dashboard/super-admin/schools/new"
               className="p-4 bg-[var(--color-bg-page)] rounded-xl border border-[var(--color-border-light)] hover:border-[var(--color-primary)] transition-all flex flex-col items-center gap-2 group cursor-pointer"
             >
               <Building2 className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)]" />
-              <span className="text-xs font-black text-[var(--color-text-secondary)]">New School</span>
+              <span className="text-xs font-black text-[var(--color-text-secondary)]">{isAr ? "مدرسة جديدة" : "New School"}</span>
             </Link>
             <Link 
               href="/dashboard/super-admin/add-users?tab=users"
               className="p-4 bg-[var(--color-bg-page)] rounded-xl border border-[var(--color-border-light)] hover:border-[var(--color-primary)] transition-all flex flex-col items-center gap-2 group cursor-pointer"
             >
               <Users2 className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)]" />
-              <span className="text-xs font-black text-[var(--color-text-secondary)]">Admins</span>
+              <span className="text-xs font-black text-[var(--color-text-secondary)]">{isAr ? "المديرون" : "Admins"}</span>
             </Link>
             <Link 
               href="/dashboard/super-admin/transactions"
               className="p-4 bg-[var(--color-bg-page)] rounded-xl border border-[var(--color-border-light)] hover:border-[var(--color-primary)] transition-all flex flex-col items-center gap-2 group cursor-pointer"
             >
               <CreditCard className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)]" />
-              <span className="text-xs font-black text-[var(--color-text-secondary)]">Billing</span>
+              <span className="text-xs font-black text-[var(--color-text-secondary)]">{isAr ? "الفواتير" : "Billing"}</span>
             </Link>
             <Link 
               href="/dashboard/super-admin/maintenance"
               className="p-4 bg-[var(--color-bg-page)] rounded-xl border border-[var(--color-border-light)] hover:border-[var(--color-primary)] transition-all flex flex-col items-center gap-2 group cursor-pointer"
             >
               <Wrench className="text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)]" />
-              <span className="text-xs font-black text-[var(--color-text-secondary)]">System</span>
+              <span className="text-xs font-black text-[var(--color-text-secondary)]">{isAr ? "النظام" : "System"}</span>
             </Link>
           </div>
         </div>

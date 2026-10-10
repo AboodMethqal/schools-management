@@ -24,7 +24,7 @@ export default function EditSchoolPage() {
     adminEmail: '', adminPassword: '', numberOfClasses: ''
   })
 
-  // ১. ডাটাবেস থেকে সব ডাটা লোড করা
+  // 1. Fetch school data from database
   useEffect(() => {
     async function fetchSchool() {
       const res = await getSchoolById(id as string)
@@ -60,7 +60,7 @@ export default function EditSchoolPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up pb-20">
       
-      {/* হেডার ও স্ট্যাটাস */}
+      {/* Header & Status */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-black text-[var(--color-text-primary)] tracking-tight uppercase">Manage Institution</h2>
@@ -73,7 +73,7 @@ export default function EditSchoolPage() {
         </span>
       </div>
 
-      {/* কুইক স্ট্যাটস কার্ড */}
+      {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[var(--color-bg-card)] p-6 rounded-2xl border border-[var(--color-border-light)] shadow-sm">
            <Users className="text-[var(--color-primary)] mb-2" size={24} />
@@ -87,11 +87,11 @@ export default function EditSchoolPage() {
         </div>
       </div>
 
-      {/* মূল এডিট ফর্ম (সব ফিল্ড সহ) */}
+      {/* Main Edit Form */}
       <div className="bg-[var(--color-bg-card)] p-8 rounded-3xl border border-[var(--color-border-light)] shadow-xl space-y-10">
         <form className="space-y-10" onSubmit={handleUpdate}>
           
-          {/* ১. {isAr ? 'الملف المؤسسي' : 'Institutional Profile'} */}
+          {/* 1. Institutional Profile */}
           <div className="space-y-6">
             <h3 className="text-lg font-black text-[var(--color-primary)] flex items-center gap-2 border-b border-[var(--color-border-light)] pb-2 uppercase tracking-tighter">
               <Building size={20} /> {isAr ? 'الملف المؤسسي' : 'Institutional Profile'}
@@ -124,30 +124,30 @@ export default function EditSchoolPage() {
             </div>
           </div>
 
-          {/* ২. {isAr ? 'التواصل والموقع الإلكتروني' : 'Communication & Web'} */}
+          {/* 2. Communication & Web */}
           <div className="space-y-6">
             <h3 className="text-lg font-black text-emerald-500 flex items-center gap-2 border-b border-[var(--color-border-light)] pb-2 uppercase tracking-tighter">
               <Globe size={20} /> {isAr ? 'التواصل والموقع الإلكتروني' : 'Communication & Web'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input placeholder="Official Email" name="schoolEmail" value={formData.schoolEmail} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
-              <input placeholder="Phone Number" name="phone" value={formData.phone} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
-              <input placeholder="Website URL" name="websiteUrl" value={formData.websiteUrl} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
-              <input placeholder="Facebook URL" name="facebookUrl" value={formData.facebookUrl} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
+              <input placeholder={isAr ? "البريد الإلكتروني الرسمي" : "Official Email"} name="schoolEmail" value={formData.schoolEmail} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
+              <input placeholder={isAr ? "رقم الهاتف" : "Phone Number"} name="phone" value={formData.phone} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
+              <input placeholder={isAr ? "الموقع الإلكتروني" : "Website URL"} name="websiteUrl" value={formData.websiteUrl} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
+              <input placeholder={isAr ? "رابط فيسبوك" : "Facebook URL"} name="facebookUrl" value={formData.facebookUrl} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
               <div className="md:col-span-2">
-                <textarea placeholder="Full Address" name="address" value={formData.address} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl h-24" onChange={handleChange} />
+                <textarea placeholder={isAr ? "العنوان الكامل" : "Full Address"} name="address" value={formData.address} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl h-24" onChange={handleChange} />
               </div>
             </div>
           </div>
 
-          {/* ৩. Admin Account */}
+          {/* 3. Admin Account */}
           <div className="space-y-6">
             <h3 className="text-lg font-black text-orange-500 flex items-center gap-2 border-b border-[var(--color-border-light)] pb-2 uppercase tracking-tighter">
-              <ShieldCheck size={20} /> Admin Credentials
+              <ShieldCheck size={20} /> {isAr ? 'بيانات اعتماد المدير' : 'Admin Credentials'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input placeholder="Admin Name" name="adminName" value={formData.adminName} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
-              <input placeholder="Admin Email" name="adminEmail" value={formData.adminEmail} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
+              <input placeholder={isAr ? "اسم المدير" : "Admin Name"} name="adminName" value={formData.adminName} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
+              <input placeholder={isAr ? "البريد الإلكتروني للمدير" : "Admin Email"} name="adminEmail" value={formData.adminEmail} className="w-full px-4 py-3 bg-[var(--color-bg-page)] border border-[var(--color-border-light)] rounded-xl" onChange={handleChange} />
             </div>
           </div>
 
@@ -156,20 +156,20 @@ export default function EditSchoolPage() {
             disabled={updating}
             className="w-full bg-[var(--color-primary)] text-white font-black py-5 rounded-2xl shadow-lg hover:scale-[1.01] transition-all text-lg uppercase tracking-widest disabled:opacity-50"
           >
-            {updating ? "UPDATING SYSTEM..." : "SAVE INSTITUTION CHANGES"}
+            {updating ? (isAr ? "جارٍ التحديث..." : "UPDATING SYSTEM...") : (isAr ? "حفظ التغييرات" : "SAVE INSTITUTION CHANGES")}
           </button>
         </form>
       </div>
 
-      {/* ৪. Danger Zone */}
+      {/* 4. Danger Zone */}
       <div className="bg-[var(--color-bg-card)] p-8 rounded-3xl border border-[var(--color-border-light)] space-y-8">
         <h3 className="text-xl font-black text-red-600 mb-4 uppercase flex items-center gap-2">
-          <ShieldAlert size={24} /> Danger Zone
+          <ShieldAlert size={24} /> {isAr ? 'منطقة الخطر' : 'Danger Zone'}
         </h3>
         <div className="p-6 border-2 border-red-500/20 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <p className="font-bold text-[var(--color-text-primary)]">Suspend Institution</p>
-            <p className="text-sm text-[var(--color-text-muted)]">সাসপেন্ড করলে এই স্কুলের সকল প্যানেল অ্যাক্সেস বন্ধ হয়ে যাবে।</p>
+            <p className="font-bold text-[var(--color-text-primary)]">{isAr ? 'تعليق نشاط المدرسة' : 'Suspend Institution'}</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{isAr ? 'تعليق المدرسة سيمنع وصول جميع المستخدمين واللوحات التابعة لها.' : 'Suspending will freeze all panel access for this school and its users.'}</p>
           </div>
           <button className="px-6 py-3 rounded-xl font-black text-sm bg-red-600 text-white shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all uppercase">
             Suspend Now

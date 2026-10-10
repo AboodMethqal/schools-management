@@ -118,7 +118,7 @@ export default function NewSchool() {
                 showConfirmButton: false
             })
 
-            // ✅ এখান পরিবর্তন করা হয়েছে: সরাসরি স্কুল ম্যানেজমেন্ট লিস্টে যাবে
+            // Navigate directly to schools management list
             router.push('/dashboard/super-admin/schools')
 
         } catch (err: any) {

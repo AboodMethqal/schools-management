@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import { User, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
 import { useLanguage } from "@/context/LanguageProvider";
-import { getMyProfileData, updateMyProfileData } from "@/app/actions/principle/profile"; // update function টি ইমপোর্ট করুন
+import { getMyProfileData, updateMyProfileData } from "@/app/actions/principle/profile";
 
 export default function SettingsPage() {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false); // আপডেটিং স্টেট
+  const [updating, setUpdating] = useState(false);
   const [profile, setProfile] = useState({
     fullName: "",
     email: "",
@@ -34,7 +34,7 @@ export default function SettingsPage() {
     loadProfile();
   }, []);
 
-  // আপডেট করার ফাংশন
+  // Update profile function
   const handleUpdate = async () => {
     setUpdating(true);
     const res = await updateMyProfileData({

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { 
   Building, Globe, Mail, 
   Facebook,Phone, MapPin, ArrowLeft, CreditCard,  Link as LinkIcon, Save
-} from 'lucide-react' // বা lucide-react
+} from 'lucide-react'
 import { updateSchool } from '@/app/actions/school' 
 import { getPlans } from '@/app/actions/plans'
 import Swal from 'sweetalert2'
@@ -39,7 +39,7 @@ export default function EditSchool({ initialData }: EditSchoolProps) {
 
   const [plans, setPlans] = useState<any[]>([])
 
-  // ২. ডাটাবেজ থেকে আসা ডাটা ফর্মে বসানো
+  // Populate form with database data
   useEffect(() => {
     const fetchPlans = async () => {
       const res = await getPlans()

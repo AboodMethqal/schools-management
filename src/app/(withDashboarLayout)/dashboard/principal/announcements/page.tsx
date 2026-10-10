@@ -26,7 +26,7 @@ export default function AnnouncementsPage() {
     loadNotices();
   }, []);
 
-  // ফিল্টার লজিক
+  // Filter logic
   const filteredNotices = notices.filter((item) => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesAudience = audienceFilter === "all_roles" || item.audience === audienceFilter;
