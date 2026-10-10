@@ -253,7 +253,10 @@ const UnifiedLoginPage = () => {
                         <Mail size={16} />
                       </div>
                       <input
+                        id="login-email"
+                        name="email"
                         type="email"
+                        autoComplete="username"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         placeholder="yourname@school.com"
@@ -265,7 +268,7 @@ const UnifiedLoginPage = () => {
 
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center ms-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-text-primary">
+                      <label htmlFor="login-password" className="text-[10px] font-black uppercase tracking-widest text-text-primary">
                         {language === 'ar' ? 'كلمة المرور' : 'Password'}
                       </label>
                       {/* Opens modal instead of calling API directly */}
@@ -282,7 +285,10 @@ const UnifiedLoginPage = () => {
                         <Lock size={16} />
                       </div>
                       <input
+                        id="login-password"
+                        name="password"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
